@@ -30,19 +30,18 @@ from detect import REGEX_HITS  # name → grade mapping (A/B/H/X)
 
 # ---------------- Metric display config ----------------
 
-# Top metric table in HTML: key → (display name, direction note, human reference)
-# Reference values: median of 270 matched-pair measurements (see RESEARCH.md / paired-metrics CSV).
+# Top metric table: key → (display name, better direction, reference)
+# References: human medians from the 270 matched pairs in RESEARCH.md (Chinese corpus; direction only).
 METRIC_ROWS = [
     ("Contrast reversal", "'Not A but B' contrast", "low", 0.22),
     ("Cue-phrase colon", "Conclusion-cue colon", "low", 0.08),
-    ("Enumeration comma list ≥3", "Dense enumeration", "low", 1.78),
-    ("Long pre-modifier", "Long pre-modifiers", "low", 0.1),
+    ("Serial list ≥3", "Dense lists", "low", 1.78),
 ]
 
 STRUCT_ROWS = [
     ("Sentence-length CV", "Sentence-length variation", "higher = more varied", "human ≈0.54 / AI ≈0.46"),
     ("Section-length CV", "Section-length variation", "higher = more varied", "human ≈0.83 / AI ≈0.31"),
-    ("Headings per 1k chars", "Section density", "lower = whole piece written continuously", "human ≈0.32 / AI ≈1.26"),
+    ("Headings per 1k words", "Section density", "lower = whole piece written continuously", "human ≈0.32 / AI ≈1.26"),
     ("Isomorphic pairs per 100 paras", "Adjacent-sentence isomorphism", "lower is better", "human ≈5.52 / AI ≈8.71"),
     ("Isomorphic triples per 100 paras", "Triple isomorphism (coarse)", "lower is better", "human ≈0.41 / AI ≈0.84"),
     ("MTLD (rough)", "Lexical variety", "below human ≈ natural", "human ≈143 / AI ≈227"),
@@ -55,7 +54,7 @@ FINGERPRINT_ROWS = [
 ]
 
 CSS = """
-body{font-family:-apple-system,"PingFang SC",sans-serif;max-width:760px;margin:40px auto;line-height:1.9;font-size:16px;padding:0 20px;color:#222}
+body{font-family:-apple-system,sans-serif;max-width:760px;margin:40px auto;line-height:1.9;font-size:16px;padding:0 20px;color:#222}
 h1{font-size:22px}h2{font-size:19px;border-bottom:2px solid #ccc;padding-bottom:6px;margin-top:2.2em}
 h3{font-size:16px;margin-bottom:0.4em}
 table{border-collapse:collapse;width:100%;font-size:14px;margin:0.6em 0 1.4em}
@@ -126,7 +125,7 @@ def metric_table(d0, d1):
     return ("<table><tr><th>Metric</th><th>Before</th><th>After</th><th>Change</th>"
             "<th>Human ref</th></tr>" + "".join(rows) + "</table>"
             '<p class="small">↓/↑ green = moved toward the human reference (improved), red = worse; fingerprint rows have no direction. '
-            "Reference values = human medians from 270 matched pairs (per 1k chars or CV); see RESEARCH.md.</p>")
+            "Reference values = human medians from 270 matched pairs (per 1k words or CV; Chinese-corpus study, direction only); see RESEARCH.md.</p>")
 
 
 # ---------------- Graded findings ----------------
@@ -146,7 +145,7 @@ def findings_section(d):
             rows.append(f"<div><strong>{esc(nm)}</strong> {len(hs)} hits")
             rows.append("<details><summary class='small'>show hits</summary>")
             for h in hs[:20]:
-                rows.append(f"<p class='small'>{esc(h['file'])}:{h['line']}　"
+                rows.append(f"<p class='small'>{esc(h['file'])}:{h['line']}  "
                             f"{esc(h['excerpt'])}</p>")
             rows.append("</details></div>")
         if rows:
@@ -195,11 +194,11 @@ def semantic_section(sem):
         for c in flagged[:15]:
             text = c.get("para") or " → ".join(filter(None, [
                 c.get("prev_tail"), c.get("next_head")])) or c.get("sentence") \
-                or "／".join(c.get("sents") or [])
+                or " / ".join(c.get("sents") or [])
             conf = c.get("confidence", "")
             reason = c.get("reason", "")
             out.append(f"<p class='small'><strong>{esc(c['label'])}</strong>"
-                       f" (confidence: {esc(conf)}) {esc(c.get('file',''))}:{c.get('line','')}　"
+                       f" (confidence: {esc(conf)}) {esc(c.get('file',''))}:{c.get('line','')}  "
                        f"{esc(text[:110])}"
                        + (f"<br>reason: {esc(reason[:100])}" if reason else "") + "</p>")
     return "\n".join(out)
@@ -213,20 +212,26 @@ def para_split(text):
     return paras
 
 
+def tokens(s):
+    """Words and the whitespace between them, so diffs land on word boundaries."""
+    return re.findall(r"\s+|\S+", s)
+
+
 def inline_diff(a, b):
-    """Character-level diff within a paragraph: same = black, deleted = grey strikethrough, changed/added = red."""
+    """Word-level diff within a paragraph: same = black, deleted = grey strikethrough, changed/added = red."""
+    a, b = tokens(a), tokens(b)
     sm = difflib.SequenceMatcher(None, a, b, autojunk=False)
     out = []
     for tag, i1, i2, j1, j2 in sm.get_opcodes():
+        x, y = "".join(a[i1:i2]), "".join(b[j1:j2])
         if tag == "equal":
-            out.append(esc(a[i1:i2]))
+            out.append(esc(x))
         elif tag == "delete":
-            out.append(f'<span class="del">{esc(a[i1:i2])}</span>')
+            out.append(f'<span class="del">{esc(x)}</span>')
         elif tag == "insert":
-            out.append(f'<span class="ins">{esc(b[j1:j2])}</span>')
+            out.append(f'<span class="ins">{esc(y)}</span>')
         elif tag == "replace":
-            out.append(f'<span class="del">{esc(a[i1:i2])}</span>'
-                       f'<span class="chg">{esc(b[j1:j2])}</span>')
+            out.append(f'<span class="del">{esc(x)}</span><span class="chg">{esc(y)}</span>')
     return "".join(out)
 
 
@@ -285,7 +290,7 @@ def metric_table_md(d0, d1):
         rows.append(f"| {key} (fingerprint) | {v0} | {v1} | {arrow_md(v0, v1, None)} | {note} |")
     rows.append("")
     rows.append("↓/↑ = improved/worsened toward the human reference; fingerprint rows have no direction. "
-                "Reference values = human medians from 270 matched pairs (per 1k chars or CV); see RESEARCH.md.")
+                "Reference values = human medians from 270 matched pairs (per 1k words or CV; Chinese-corpus study, direction only); see RESEARCH.md.")
     return "\n".join(rows)
 
 
@@ -303,7 +308,7 @@ def findings_section_md(d):
                 continue
             lines = [f"**{nm}** {len(hs)} hits", ""]
             for h in hs[:20]:
-                lines.append(f"- `{h['file']}:{h['line']}`　{h['excerpt']}")
+                lines.append(f"- `{h['file']}:{h['line']}`  {h['excerpt']}")
             lines.append("")
             blocks.append("\n".join(lines))
         if blocks:
@@ -347,34 +352,36 @@ def semantic_section_md(sem):
         for c in flagged[:15]:
             text = c.get("para") or " → ".join(filter(None, [
                 c.get("prev_tail"), c.get("next_head")])) or c.get("sentence") \
-                or "／".join(c.get("sents") or [])
+                or " / ".join(c.get("sents") or [])
             conf = c.get("confidence", "")
             reason = c.get("reason", "")
-            out.append(f"- **{c['label']}** (confidence: {conf}) `{c.get('file','')}:{c.get('line','')}`　{text[:110]}"
-                       + (f"　reason: {reason[:100]}" if reason else ""))
+            out.append(f"- **{c['label']}** (confidence: {conf}) `{c.get('file','')}:{c.get('line','')}`  {text[:110]}"
+                       + (f"  reason: {reason[:100]}" if reason else ""))
         out.append("")
     return "\n".join(out)
 
 
 def inline_diff_md(a, b):
-    """Markdown version of the within-paragraph character diff: <del> = original, <ins> = new text.
+    """Markdown version of the within-paragraph word diff: <del> = original, <ins> = new text.
 
     Uses inline HTML tags rather than ~~ / **: edits often fall inside or beside existing **bold**,
     ## headings and other markdown markers, where ~~ / ** pair up wrongly (nesting breaks).
     <del>/<ins> are valid inline HTML and never clash with markdown markers; Typora, VS Code and
     GitHub previews render them correctly (strikethrough/underline).
     """
+    a, b = tokens(a), tokens(b)
     sm = difflib.SequenceMatcher(None, a, b, autojunk=False)
     out = []
     for tag, i1, i2, j1, j2 in sm.get_opcodes():
+        x, y = "".join(a[i1:i2]), "".join(b[j1:j2])
         if tag == "equal":
-            out.append(a[i1:i2])
+            out.append(x)
         elif tag == "delete":
-            out.append(f"<del>{a[i1:i2]}</del>")
+            out.append(f"<del>{x}</del>")
         elif tag == "insert":
-            out.append(f"<ins>{b[j1:j2]}</ins>")
+            out.append(f"<ins>{y}</ins>")
         else:  # replace
-            out.append(f"<del>{a[i1:i2]}</del><ins>{b[j1:j2]}</ins>")
+            out.append(f"<del>{x}</del><ins>{y}</ins>")
     return "".join(out)
 
 
@@ -483,9 +490,8 @@ def main():
     else:
         page = build_report(t0, t1, d0, d1, sem, args.before, args.after)
     Path(out).write_text(page, encoding="utf-8")
-    n_han = lambda t: len(re.findall(r"[一-鿿]", t))
-    print(f"Report → {out} (before {n_han(t0)} Han chars / after {n_han(t1)} Han chars, "
-          f"change {n_han(t1) - n_han(t0):+d})")
+    w0, w1 = len(t0.split()), len(t1.split())
+    print(f"Report → {out} (before {w0} words / after {w1} words, change {w1 - w0:+d})")
 
 
 if __name__ == "__main__":

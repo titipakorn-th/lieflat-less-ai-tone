@@ -1,4 +1,6 @@
-# Measured features of Chinese AI-generated text
+# Measured features of AI-generated text (Chinese-corpus study)
+
+> **Note on language.** The study measured Chinese text. Chinese phrases below appear as English glosses, and their numbers are Chinese-corpus numbers. The English port reuses the study's rule directions, with Chinese-only rules dropped (the "when…" temporal clause and long pre-modifier rules). Its thresholds are not calibrated for English.
 
 This document records each rule's **assumption and measured result**, including assumptions that were overturned. A rule rests on whether its sentence pattern can be located; numbers decide only whether a pattern qualifies as a rule.
 
@@ -12,17 +14,17 @@ Round-two design: 270 article pairs. Each pair shares a topic and facts (the hum
 
 ### Lesson: analyze by model
 
-Pooled, the em-dash result was "not significant." Split by model, it was GPT −0.54 and Opus +0.95. **Two real signals in opposite directions cancelled into a false negative.** Round one's five 60-article sets had already shown this (DeepSeek 5.16, GPT 0.11), and round two confirmed it: multi-model corpora must be reported per model. v2 downgraded em dashes, semicolons, quotation marks and "的" per clause to **fingerprint measures**. They report density and direction and are not universal rewrite rules (the em-dash rule triggers only above 2 per 1k characters).
+Pooled, the em-dash result was "not significant." Split by model, it was GPT −0.54 and Opus +0.95. **Two real signals in opposite directions cancelled into a false negative.** Round one's five 60-article sets had already shown this (DeepSeek 5.16, GPT 0.11), and round two confirmed it: multi-model corpora must be reported per model. v2 downgraded em dashes, semicolons, quotation marks and the attributive particle per clause to **fingerprint measures**. They report density and direction and are not universal rewrite rules (the em-dash rule triggers only above 2 per 1k characters).
 
 ### Three rules overturned (removed in v2)
 
 | Rule | Round one | Matched retest | Conclusion |
 |------|-----------|----------------|------------|
-| Ordinal subheadings, 3.1× | AI 0.19 / human 0.06 | **Reversed:** human 8.6% vs AI 4.9% | The belief that "AI loves 一二三 numbering" is an illusion. AI's real habit is more sections, not numbering |
-| "This means" restatement (「这意味着」), 2.6–5.3× | Listed as translationese | **Reversed:** human 0.027 vs AI 0.016 per 1k chars; reversed on all three definitions | Humans use 「换句话说」 (“in other words”)-style restatement more |
+| Ordinal subheadings, 3.1× | AI 0.19 / human 0.06 | **Reversed:** human 8.6% vs AI 4.9% | The belief that "AI loves 1-2-3 numbering" is an illusion. AI's real habit is more sections, not numbering |
+| "This means" restatement ("this means"), 2.6–5.3× | Listed as translationese | **Reversed:** human 0.027 vs AI 0.016 per 1k chars; reversed on all three definitions | Humans use "in other words"-style restatement more |
 | Empty lead-in to list, 9.4× | One of the colon-misuse patterns | **Reversed:** humans an order of magnitude higher (0.225 vs 0.008–0.032) | A normal way to write catalog-style long-form pieces |
 
-Also, the premise "AI lacks numbers" was overturned: no difference after pairing. But the semantic layer found the real mechanism. In 24.7% of comparable paragraphs, AI replaced the human's concrete information with abstract summary (vague summary). Rule 9 was rewritten accordingly. It no longer assumes missing numbers and only guards against 「概括盖住同段已有数值」 (a summary covering existing values in the same paragraph).
+Also, the premise "AI lacks numbers" was overturned: no difference after pairing. But the semantic layer found the real mechanism. In 24.7% of comparable paragraphs, AI replaced the human's concrete information with abstract summary (vague summary). Rule 9 was rewritten accordingly. It no longer assumes missing numbers and only guards against a summary covering concrete values already present in the same paragraph.
 
 **[2026-10-13 second rejection: the 24.7% was a one-sided count. Under a symmetric count, AI was vaguer in 24.7% of paragraphs and more specific in 26.0%, a net zero. 98% of numbers were retained (83% in other paragraphs of the same article, 10% written as Chinese numerals). The information-loss framing does not hold: AI differs in organization, not in information quantity. Rule 9 is withdrawn entirely and downgraded to X. Do not edit even when the same paragraph has concrete values. Rewrite fidelity is backstopped by "information conservation: every content word must have a source."]**
 
@@ -68,9 +70,9 @@ The human side is publicly available articles by real Chinese authors, tallied i
 
 ### Segmentation
 
-Sentences: split by line first. Drop heading lines, table rows, code blocks, block quotes and list items. Then split at `。！？；`, keeping fragments of four or more characters.
+Sentences: split by line first. Drop heading lines, table rows, code blocks, block quotes and list items. Then split at the Chinese sentence-final marks (equivalent to . ! ? ;), keeping fragments of four or more characters.
 
-Dropping those lines matters. An early version split only at `。！？`, so Markdown tables and long lists without sentence-final punctuation counted as single sentences. One group's sentence-length standard deviation came out at 27 times its mean, which produced the claim that AI sentences are 51 times more uniform than human ones. After correction the ratio is 0.87: no difference.
+Dropping those lines matters. An early version split only at sentence-final marks, so Markdown tables and long lists without sentence-final punctuation counted as single sentences. One group's sentence-length standard deviation came out at 27 times its mean, which produced the claim that AI sentences are 51 times more uniform than human ones. After correction the ratio is 0.87: no difference.
 
 Paragraphs: split on blank lines. Drop headings, tables, code blocks, quotes, list items and image lines. Keep paragraphs of eight or more characters.
 
@@ -80,7 +82,7 @@ Three, chosen by what is measured.
 
 | Denominator | Used for | Examples |
 |---|---|---|
-| Per 1k characters | Lexical and punctuation features | Em dashes, enumeration commas, 「不是…而是…」 |
+| Per 1k characters | Lexical and punctuation features | Em dashes, enumeration commas, "not X but Y" |
 | Per 100 paragraphs | Paragraph-level structure | Adjacent-sentence isomorphism, figurative openings |
 | Share of same-type elements | Features bound to a structure | Interrogative subheadings as a share of all subheadings |
 
@@ -131,9 +133,9 @@ The ratio column is always generated ÷ human. Above 1 means generated text uses
 | Personifying vehicle | "Metaphor wraps abstract concepts" | Generated 0.018, human 0.002 | 7.3× | 7 |
 | Colon overuse (cue phrase) | "Feels templated" | Generated 0.29, human 0.08 | 3.8× | 5 |
 | Colon overuse (empty lead-in to list) | Not assumed | Generated 0.29, human 0.03 | 9.4× | 5 |
-| Contrast reversal | "Models love 不是…而是…" | Generated 0.73, human 0.22 | 3.4× | 1 |
+| Contrast reversal | "Models love the not-X-but-Y construction" | Generated 0.73, human 0.22 | 3.4× | 1 |
 | Em dash | "Unique to Claude, ×3" | Generated 2.38, human 0.80 | 3.0× | 4 |
-| Opening formula (说白了, "frankly") | Not quantified | Generated 0.025, human 0.008 | 3.2× | 9 |
+| Opening formula ("to put it bluntly") | Not quantified | Generated 0.025, human 0.008 | 3.2× | 9 |
 | Ordinal as subheading | "29% of GPT paragraphs use ordinals" | Generated 0.19, human 0.06 | 3.1× | 6 |
 | Material density (missing figures) | Not assumed | Numerals: generated 6.34, human 17.92 | 0.35× (human 2.8× higher) | 8 |
 | Adjacent-sentence isomorphism | Assumed "tripartite parallelism ×7" | Per 100 paragraphs: generated 9.41, human 4.81 | 2.0× | 3 |
@@ -147,7 +149,7 @@ The ratio column is always generated ÷ human. Above 1 means generated text uses
 | Sentence-length uniformity | "AI is 50× more uniform" | Sentence-length CV: generated 0.58, human 0.67 | 0.87× | The ×51 came from a sentence-splitting defect |
 | Adjacent sentence-length difference | Same as above | Generated 21.7, human 21.7 | 1.00× | No difference at all |
 | Paragraph-length uniformity | "AI paragraphs are also highly uniform" | Robust dispersion: generated 0.94, human 1.00 | 0.94× | The 3.9× CV came from one unbroken 19,335-character paragraph |
-| Single-character function words (就/很/了) | "Humans 3–7× higher" | 就: generated 2.93, human 6.45 | 0.45× | The direction is addition, not deletion; human groups vary, and one group alone can inflate the ratio |
+| Monosyllabic particles (jiu, hen, le) | "Humans 3–7× higher" | "jiu": generated 2.93, human 6.45 | 0.45× | The direction is addition, not deletion; human groups vary, and one group alone can inflate the ratio |
 | Colloquial connectives | "Humans 3–6× higher" | Generated 1.01, human 3.87 | 0.26× | Same as above |
 | Fewer pronouns, repeated full names | "AI repeats full names" | Same noun opening adjacent sentences: generated 0.02, human 0.04 | 0.5× | Humans do it more |
 | Passive voice | "AI retains English passives" | Abstract passive: generated 0.09 | — | Far below threshold; human 3.2% vs generated 4.5%, also no difference |
@@ -156,9 +158,9 @@ The ratio column is always generated ÷ human. Above 1 means generated text uses
 | In-body questions | Same as above | Generated 0.10, human 1.83 | 0.05× | Humans 17× higher; deleting them would read less human |
 | Intra-sentence parallelism | "Tripartite parallelism, GPT ×7.3" | Two items sharing an opening character: generated 2.35, human 3.87 | 0.61× | Humans higher within sentences; only cross-sentence repetition holds |
 | Metaphor as such | "Non-fiction should avoid figurative language" | Metaphor markers: generated 0.16, human 0.38 | 0.42× | Humans 2.4× higher; metaphor as a standalone paragraph 8× |
-| Abstract noun with concrete verb | 「时间保管细节、焦虑显形状」 (“time keeps the details, anxiety takes shape”) | Generated 0.001, human 0.001 | 0.7× | Neither side writes it |
-| Verb nominalization | 「完成了对…的优化」 (“completed the optimization of…”) | Generated 0.003, human 0.005 | 0.52× | Humans higher; measured with abstract suffixes instead, generated is 1.6× higher |
-| In-body ordinals | "GPT 29% vs human 4%" | Sentence-initial 「首先，」: generated 0.06, human 0.03 | 2× | Weakest form; mid-sentence 「第一，」 at 1.2× shows no difference |
+| Abstract noun with concrete verb | "time keeps the details, anxiety takes shape" | Generated 0.001, human 0.001 | 0.7× | Neither side writes it |
+| Verb nominalization | "completed the optimization of…" (light-verb frame) | Generated 0.003, human 0.005 | 0.52× | Humans higher; measured with abstract suffixes instead, generated is 1.6× higher |
+| In-body ordinals | "GPT 29% vs human 4%" | Sentence-initial "first, …": generated 0.06, human 0.03 | 2× | Weakest form; mid-sentence "first, …" at 1.2× shows no difference |
 
 ### Colons: meaningful only when split by function
 
@@ -168,8 +170,8 @@ Total colon density is 5.30 per 1k characters for generated text and 3.65 for hu
 
 | Function | Generated | Human | *R* | G1 | G2 | Spread | Decision |
 |---|---|---|---|---|---|---|---|
-| Cue phrase (「核心是：」 "the core is:") | 0.29 | 0.08 | 3.78× | 0.06 | 0.11 | 1.8× | Include |
-| Empty lead-in to list (「几种场景：」 "several scenarios:") | 0.29 | 0.03 | 9.38× | 0.03 | 0.03 | 1.1× | Include |
+| Cue phrase ("the core is:") | 0.29 | 0.08 | 3.78× | 0.06 | 0.11 | 1.8× | Include |
+| Empty lead-in to list ("several scenarios:") | 0.29 | 0.03 | 9.38× | 0.03 | 0.03 | 1.1× | Include |
 | Mid-sentence general-then-specific (followed by Chinese characters) | 3.00 | 1.80 | 1.66× | 0.61 | 4.07 | 6.6× | Inconsistent across groups |
 | Bold subheading + colon | 0.43 | 0.26 | 1.66× | 0.10 | 0.56 | 5.7× | Inconsistent across groups |
 | Introducing items (followed by numbering) | 0.87 | 0.62 | 1.40× | 0.80 | 0.27 | 2.9× | Difference insufficient |
@@ -191,6 +193,7 @@ Quotation colons account for 41–45% of human colons against 27.6% for generate
 The denominator is paragraph count, not character count.
 
 ```
+# Script deleted in the English port. The isomorphism metrics live on in detect.py and compare-human-ai.py.
 python3 scripts/check-structure.py --human <dirs...> --ai <dirs...>
 ```
 
@@ -201,16 +204,16 @@ python3 scripts/check-structure.py --human <dirs...> --ai <dirs...>
 | Zero-anaphora paragraph opening (zero-subject comment; share of non-initial paragraphs) | 0.61% | 0.14% | **4.38×** | Stable |
 | Figurative paragraph opening (per 100 paragraphs; control) | 0.03 | 0.21 | 0.13× | Varies widely |
 
-Total paragraph-initial connective density shows no difference (generated 14.4%, human 15.1%). Generated text does not use fewer connectives. Its evaluative sentences omit the anaphoric element; adding a single 「这」 ("this") restores the link.
+Total paragraph-initial connective density shows no difference (generated 14.4%, human 15.1%). Generated text does not use fewer connectives. Its evaluative sentences omit the anaphoric element; adding a single demonstrative ("this") restores the link.
 
 Intra-sentence and cross-sentence patterns must be assessed separately. Humans use intra-sentence parallelism at least as much as generated text does:
 
 | Intra-sentence form | Generated | Human | *R* |
 |---|---|---|---|
-| Two items sharing an opening (「要…要…」) | 2.35 | 3.87 | 0.61× |
+| Two items sharing an opening (repeated "must… must…" frame) | 2.35 | 3.87 | 0.61× |
 | Three items sharing an opening | 0.34 | 0.36 | 0.95× |
-| 「更X、更X」 ("more X, more X") | 0.13 | 0.15 | 0.84× |
-| 「X的A、Y的B、Z的C」 ("X's A, Y's B, Z's C") | 0.14 | 0.12 | 1.10× |
+| Repeated "more X, more X" frame | 0.13 | 0.15 | 0.84× |
+| Parallel "X's A, Y's B, Z's C" frame | 0.14 | 0.12 | 1.10× |
 
 Hence rule 3 covers cross-sentence repetition only. Intra-sentence parallelism is kept.
 
@@ -230,33 +233,34 @@ The conditional distributions are nearly identical. Generated text simply has ab
 ## Translationese: 18 narrowed to 5
 
 ```
+# Script deleted in the English port. The table below is the Chinese-corpus record.
 python3 scripts/check-translationese.py <generated corpus dirs...>
 ```
 
 | Construction | Generated per 1k chars | Coverage | Decision |
 |---|---|---|---|
 | Long pre-modifier | 0.42 | 179/300 | Include |
-| 当…时 clause | 0.26 | 136/300 | Include |
-| Topic-shell frame (前置话题壳) | 0.22 | 137/300 | Include |
+| "When… , at that time" temporal clause | 0.26 | 136/300 | Include |
+| Topic-shell frame (fronted topic wrapper) | 0.22 | 137/300 | Include |
 | Sentence-initial connective | 0.18 | 102/300 | Include |
-| 这意味着 ("this means") | 0.15 | 122/300 | Include |
+| "This means" | 0.15 | 122/300 | Include |
 | Abstract passive | 0.09 | 75/300 | Drop |
-| 在…的过程中 ("in the course of…") | 0.07 | 64/300 | Drop |
-| 不仅仅是 ("not merely") | 0.05 | 41/300 | Drop |
-| 存在着/有着 ("exists / has") | 0.04 | 29/300 | Drop |
-| Light verb (进行了…分析) | 0.03 | 30/300 | Drop |
-| 使得…能够 ("causes… to be able to") | 0.03 | 26/300 | Drop |
-| 在某种程度上 ("to some degree"; literal degree phrase) | 0.02 | 25/300 | Drop |
-| 扮演角色 ("play the role of") | 0.02 | 22/300 | Drop |
-| 值得注意的是 ("it is worth noting that"; formal subject) | 0.02 | 19/300 | Drop |
-| 如果…的话 ("if… then") | 0.01 | 9/300 | Drop |
-| 以一种…的方式 ("in a… manner") | 0.01 | 8/300 | Drop |
-| 一系列的 ("a series of"; literal plural) | 0.00 | 5/300 | Drop |
-| 受到…的关注 ("receive attention from…") | 0.00 | 4/300 | Drop |
+| "in the course of…" | 0.07 | 64/300 | Drop |
+| "not merely" | 0.05 | 41/300 | Drop |
+| "exists / has" verb frame | 0.04 | 29/300 | Drop |
+| Light verb ("carried out … analysis") | 0.03 | 30/300 | Drop |
+| "causes… to be able to" | 0.03 | 26/300 | Drop |
+| "to some degree" (literal degree phrase) | 0.02 | 25/300 | Drop |
+| "play the role of" | 0.02 | 22/300 | Drop |
+| "it is worth noting that" (formal subject) | 0.02 | 19/300 | Drop |
+| "if… then" frame | 0.01 | 9/300 | Drop |
+| "in a… manner" frame | 0.01 | 8/300 | Drop |
+| "a series of" (literal plural) | 0.00 | 5/300 | Drop |
+| "receive attention from…" | 0.00 | 4/300 | Drop |
 
 The five retained constructions show AI-to-human ratios of 2.6 to 5.3×. The thirteen dropped fall below 0.09 per 1k characters. They are translationese, but not AI traces: modern written Chinese already uses them.
 
-Three of the dropped items were in the original version of the rule set (以一种…的方式, 使得…能够, 扮演角色). All measure below 0.03, so they were removed together.
+Three of the dropped items were in the original version of the rule set ("in a… manner", "causes… to be able to", "play the role of"). All measure below 0.03, so they were removed together.
 
 ## Between-model variation
 
@@ -266,7 +270,7 @@ A single feature can differ by an order of magnitude between models. Do not judg
 |------|--------|----------|--------|-----|------|
 | Em dash | 4.25 | **5.16** | 0.51 | 0.11 | 2.32 |
 | Cue colon | 0.38 | **0.43** | 0.22 | 0.25 | 0.32 |
-| Contrast reversal (不是…而是…) | 0.61 | 0.86 | 0.29 | **1.26** | 0.51 |
+| Contrast reversal (not X but Y) | 0.61 | 0.86 | 0.29 | **1.26** | 0.51 |
 | Ordinal subheading | **1.00** | 0.69 | 0.22 | 0.73 | 0.82 |
 | Long pre-modifier | 0.64 | **0.65** | 0.48 | 0.06 | 0.22 |
 | Interrogative subheading | 0.043 | 0.086 | **0.173** | 0.008 | 0.000 |
@@ -279,12 +283,12 @@ GPT's em-dash rate of 0.11 has led some to argue the feature is no longer an AI 
 
 Each came from applying a broad regex to a precisely defined rule, or from choosing the wrong denominator. Each happened because the frequency was read before the matches were inspected.
 
-1. **Long pre-modifier 3.04 per 1k.** The regex counted ordinary sentences such as 「质量管理是从0到1阶段最容易被忽视的问题」 ("quality management is the most overlooked problem in the zero-to-one stage") as long modifiers. After tightening: 0.35.
-2. **Coordinating conjunctions 0.26.** The rule says "two or more within one clause," but the operator measured single occurrences of 而且 and 并且. Measured per the rule: 0.00.
-3. **Nested 的…的…的 0.25.** The regex matched across enumeration commas, counting ordinary lists such as 「巴西的LGPD、印度的DPDPA、日本的APPI」 as nested modifiers. After tightening: 0.06.
-4. **Cue colon 5.97 vs 5.45, "no difference."** The operator was "Chinese character + colon." Of 6,431 matches, 1,266 were headings, 1,225 list items and 207 dialogue, all explicitly exempt under the rule. Measured per the definition: 0.32 vs 0.08.
+1. **Long pre-modifier 3.04 per 1k.** The regex counted ordinary sentences such as "quality management is the most overlooked problem in the zero-to-one stage" as long modifiers. After tightening: 0.35.
+2. **Coordinating conjunctions 0.26.** The rule says "two or more within one clause," but the operator measured single occurrences of the coordinators "and also" and "and". Measured per the rule: 0.00.
+3. **Nested "of… of… of…" modifiers 0.25.** The regex matched across enumeration commas, counting ordinary lists such as "Brazil's LGPD, India's DPDPA, Japan's APPI" as nested modifiers. After tightening: 0.06.
+4. **Cue colon 5.97 vs 5.45, "no difference."** The operator was "CJK character + colon." Of 6,431 matches, 1,266 were headings, 1,225 list items and 207 dialogue, all explicitly exempt under the rule. Measured per the definition: 0.32 vs 0.08.
 5. **Interrogative subheadings 32×.** The denominator was characters, but AI averages 10 subheadings per article against 1–2 for humans. As a share of subheadings: 2.7% vs a human maximum of 3.6%, no difference.
-6. **Metaphor packaging 0.000.** The operator was a hard-coded list of 11 words (仓库 "warehouse," 抽屉 "drawer," 温度 "temperature," 钥匙 "key" …), but actual metaphors such as 「像一栋楼的门禁」 ("like a building's access control") contain none of them. Measured as a construction, humans are 2.4× higher, the reverse of the hypothesis.
+6. **Metaphor packaging 0.000.** The operator was a hard-coded list of 11 words ("warehouse," "drawer," "temperature," "key" …), but actual metaphors such as "like a building's access control" contain none of them. Measured as a construction, humans are 2.4× higher, the reverse of the hypothesis.
 
 The working requirement that follows: **inspect 20 matched instances before reading the frequency.** For measures involving structural elements (subheadings, paragraphs, lists), the denominator must be the total count of that same element type.
 
@@ -302,23 +306,22 @@ The working requirement that follows: **inspect 20 matched instances before read
 The figures above come from a corpus that is not included, so they cannot be verified directly. The method transfers: rerun it on your own corpus.
 
 ```bash
-# Sentence level: per-rule hit rates, human vs. AI
+# Sentence level and structure: per-metric comparison of human vs. AI, all detect.py metrics
 python3 scripts/compare-human-ai.py --human <human corpus dirs...> --ai <AI corpus dirs...>
 
-# Paragraph level: sentence isomorphism, zero-anaphora openings
-python3 scripts/check-structure.py --human <human corpus dirs...> --ai <AI corpus dirs...>
-
-# AI side: translationese frequencies
-python3 scripts/check-translationese.py <AI corpus dirs...>
+# Smoke test for detection patterns
+python3 scripts/test_detect.py
 ```
 
-All three scripts read `.md` files from directory arguments only. They contain no corpus and do not use directory names as labels, since corpus directories often carry source information that could leak into the output. Operator definitions sit at the top of each script and can be edited directly.
+The paragraph-level script (`check-structure.py`) and the translationese script (`check-translationese.py`) were deleted in the English port. Isomorphism measures are now in `detect.py`; the topic-shell and sentence-initial connective forms are covered by the Stock framing rule.
+
+The scripts take corpus directories as arguments and do not use directory names as labels, since corpus directories often carry source information that could leak into the output. Operator definitions sit at the top of each script and can be edited directly.
 
 When changing a rule, look at what the regex actually matches before looking at the number.
 
 ## Appendix: sources for v2.1 detection-layer reference values
 
-Each hard-coded value in `detect.py`'s `HUMAN_REF` and in the human reference column of `report.py` has the source below. A reference value is the median of each side in the 270-pair matched retest (`配对指标结果-按模型分列.csv`, Wilcoxon + Cliff's δ).
+Each hard-coded value in `detect.py`'s `HUMAN_REF` and in the human reference column of `report.py` has the source below. A reference value is the median of each side in the 270-pair matched retest (the paired-metrics CSV, Wilcoxon + Cliff's δ, split by model).
 
 | Detection-report measure | Human median | AI median | Experimental basis | Notes |
 |---|---|---|---|---|

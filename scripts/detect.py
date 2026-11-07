@@ -1,25 +1,24 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""Single-file or directory "less AI tone" detection report (step 1 of v2: detect only, no rewriting).
+"""Less AI tone, step 1: detect only, never rewrite. Analyzes English prose (.md/.txt).
 
 Usage:
     python3 scripts/detect.py <file-or-dir> [--json] [--max-hits 5]
     python3 scripts/detect.py <file> --candidates [--out candidates.json]
 
---candidates extracts semantic-layer candidates (synonym-renaming paragraphs / inter-paragraph cohesion
-interfaces / colon sentences / triple isomorphism). The in-session Claude judges them per
-references/semantic-criteria.md; results are merged into the report.
+--candidates extracts semantic-layer candidates (rename / cohesion / colon / iso3) for the in-session
+model to judge per references/semantic-criteria.md.
 
 Grades:
-    A mechanical fix   fixed sentence-pattern / punctuation issues; model reviews and suggests; edit after user reply
-    B suggested fix    needs sentence restructuring or rewording; model reviews each item; edit after user reply
-    C report only      structure/rhythm distribution features; not edited by default
-    F fingerprint      per-model features (em dash / semicolon / quotation marks); must be read with direction
+    A mechanical fix   fixed phrasing/punctuation; model reviews, user approves, then edit
+    B suggested fix    needs restructuring; model reviews each hit, user approves, then edit
+    C report only      structure/rhythm distributions; not edited by default
+    F fingerprint      per-model habits (em dash / semicolon / quotes); always read with direction
+    H human review     metaphor aptness; listed only when the user asks
+    X rejected         measured as not AI tone; counted, never edited
 
-Human reference values come from two rounds of measurement (see RESEARCH.md):
-- Round 1: 629-doc comparison (5 models x 60 docs vs 329 human docs; unpaired)
-- Round 2: 270 matched pairs (same topic, same facts) + 430k semantic judgments
-Thresholds marked [tunable] are empirical; recalibrate when the corpus changes.
+Reference values come from the two-round study in RESEARCH.md, which measured CHINESE corpora.
+They indicate direction, not calibrated English thresholds. Values marked [tunable] need
+recalibration on an English corpus (scripts/compare-human-ai.py).
 """
 import argparse
 import json
@@ -28,157 +27,147 @@ import sys
 from pathlib import Path
 
 EXTS = {".md", ".txt"}
+I = "(?i)"
 
-# ---------------- Regex indicators (level, name, pattern, human ref per 1k chars, advice) ----------------
-
+# (grade, name, pattern, reference per 1k words from the Chinese study, advice)
 REGEX_HITS = [
     ("A", "Contrast reversal",
-     r"(?:不是|并非|不在于|与其说)[^，。！？\n]{1,20}[，]?(?:而是|而在于|不如说)",
-     "0.22", "State directly: drop 「不是A」 and give B. See rule 1"),
+     I + r"\b(?:not (?:just |only |merely |simply )?|isn't |aren't |wasn't |weren't |never )"
+         r"[^.!?;\n]{1,60}?[,;—]?\s*\b(?:but|rather|it's|it is|they're|they are)\b(?! also)"
+         r"|\b(?:is|are|was|were) not\b[^.!?\n]{1,80}?\.\s+(?:it|they|this|that)(?:'s| is| are| was| were)\b"
+         r"|\b(?:isn't|aren't|wasn't|weren't)\b[^.!?\n]{1,80}?\.\s+(?:it|they|this|that)(?:'s| is| are| was| were)\b"
+         r"|\bless about\b[^.!?\n]{1,50}?\bthan\b"
+         r"|\byou (?:might|may) think\b[^.!?\n]{1,60}?\b(?:but|actually|in fact)\b",
+     "0.22", "State the claim directly; drop the straw-man half. Rule 1"),
     ("A", "Cue-phrase colon",
-     r"(?:一句话(?:总结|说|概括)|简单说|说白了|总结|小结|结论|核心(?:是|在于|观点)?"
-     r"|关键(?:是|在于)?|重点(?:是)?|原因(?:如下|有|在于)?|问题(?:是|在于)?"
-     r"|答案(?:是)?|本质(?:是|上)?|具体(?:来说|如下|包括)?"
-     r"|举例(?:来说)?|换句话说|也就是说|我的(?:观点|判断|结论)|建议(?:是)?)[：:]",
-     "0.08", "Drop the cue phrase and write the content; if the first half continues the prior sentence, change only the punctuation. See rule 2"),
+     I + r"\b(?:in short|in a nutshell|in summary|to sum up|bottom line|the key(?: point| insight| takeaway)?(?: is)?"
+         r"|the core(?: idea| issue)?(?: is)?|the reasons?(?: is| are)?|the problem(?: is)?|the answer(?: is)?"
+         r"|the truth(?: is)?|the point(?: is)?|the takeaway|the upshot|here's the thing|here's why"
+         r"|in other words|that is|specifically|for example|my (?:view|take|conclusion|advice))\s*:"
+         # cue noun announcing a verdict: "The technical reason is actually simple:", "This is a deeper problem:"
+         r"|\b(?:the|a|an)\s+(?:[\w-]+\s){0,2}?(?:key|core|reason|problem|answer|truth|point|lesson|catch"
+         r"|fact|reality|pattern|insight)\b[^:.!?\n\"“]{0,25}:(?!//)",
+     "0.08", "Drop the cue and write the content; if the clause links back, change only the punctuation. Rule 2"),
     ("A", "Opening formula",
-     r"(?:说白了|说穿了|先说结论)[，,]",
-     "0.008", "Delete; state the judgment directly. See rule 3"),
-    ("A", "当…时 clause",
-     r"当[^，。\n]{2,20}(?<!的时候)时，",
-     "—", "Delete 当 and 时 so the clause serves directly as the preceding clause. See rule 4"),
+     I + r"\b(?:to put it bluntly|let's be honest|let me be blunt|simply put|put simply|here's the thing"
+         r"|long story short|bottom line first|spoiler)\s*[,—]",
+     "0.008", "Delete; state the judgment. Rule 3"),
     ("A", "Topic-shell frame",
-     r"(?:对于[^，。\n]{2,15}来说|对[^，。\n]{2,15}而言|就[^，。\n]{2,15}而言|在[^，。\n]{2,12}方面)",
-     "—", "Put the object directly in subject position; delete the shell. See rule 4"),
+     I + r"\b(?:when it comes to|in terms of|as for|with regard to|with respect to|in the context of|as far as [^,.\n]{2,30} (?:is|are) concerned)\b",
+     "—", "Make the topic the subject; delete the shell. Rule 4"),
     ("A", "Sentence-initial connective",
-     r"(?:^|\n)\s{0,3}(?:然而|因此|此外|与此同时|换言之|总而言之)[，、]",
-     "—", "Move after the subject, or use 不过 / 其实 (but / actually). See rule 4"),
-    ("B", "Enumeration comma list ≥3",
-     r"[^，。！？；：、\n]{1,14}、[^，。！？；：、\n]{1,14}、[^，。！？；：、\n]{1,14}",
-     "1.78", "Summarize if possible; if all items must stay, break the syntax of one of them. See rule 5"),
-    ("B", "Long pre-modifier",
-     r"(?:一个|一种|一套|这种|这个)[^，。、；：！？\n]{15,}的[一-鿿]{2,5}",
-     "0.1", "Split into two clauses (two or more chained 的 count the same). See rule 4"),
+     I + r"(?:^|(?<=[.!?]\s))\s{0,3}(?:however|therefore|moreover|furthermore|additionally|in addition|consequently"
+         r"|thus|meanwhile|in other words|ultimately|overall|importantly|notably|crucially)\s*,",
+     "—", "Move it after the subject, use a plainer word (but, so), or drop it. Rule 4"),
+    ("B", "Serial list ≥3",
+     r"\b[\w'-]+(?: [\w'-]+){0,3}, [\w'-]+(?: [\w'-]+){0,3}, (?:and |or )?[\w'-]+(?: [\w'-]+){0,3}",
+     "1.78", "Summarize if you can; if every item must stay, change the syntax of one. Rule 5"),
     ("H", "Personifying metaphor",
-     r"(?:像|如同|好比|犹如|相当于)[^，。！？\n]{0,6}一[位名个][^，。！？\n]{0,14}"
-     r"(?:导师|秘书|助手|顾问|管家|审查员|实习生|军师|教练|伙伴|专家|舵手|灯塔)",
-     "0.002", "Replace with what the thing actually does. See rule 6"),
+     I + r"\b(?:like|as if it were|acts as|serves as|think of it as)\s+(?:a|an|your)\s+(?:[\w-]+\s){0,3}?"
+         r"(?:mentor|secretary|assistant|advisor|adviser|butler|reviewer|intern|strategist|coach|partner"
+         r"|expert|navigator|lighthouse|guardian|teammate|colleague|copilot|guide)\b",
+     "0.002", "If asked: say what the thing actually does. Rule 7"),
+    # ---- Rejected: counted and shown, explicitly do-not-edit, to prevent over-cleaning ----
     ("X", "Vague summary (rejected)",
-     r"(?:显著(?:提升|提高|增长|改善|增加|优势)|大幅(?:提升|增长|提高|改善|下降|减少)"
-     r"|明显(?:改善|提升|优势|变化)|效率的提升|众多|海量)",
-     "—", "Symmetric recheck on 2026-10-13: net zero (AI vaguer 24.7% vs more specific 26.0%; numbers kept 98%), "
-     "do not edit even when the same paragraph has concrete numbers; fidelity in rewrites is covered by the information-conservation principle"),
-    # ---- Rejected features: counted and shown, explicitly marked do-not-edit, to prevent over-cleaning ----
+     I + r"\b(?:significantly|dramatically|substantially|greatly|vastly|markedly)\s+"
+         r"(?:improv|increas|enhanc|boost|reduc|decreas|cut|rais)\w*|\bcountless\b|\bnumerous\b|\bmassive amounts? of\b",
+     "—", "Symmetric recheck 2026-10-13: net zero (vaguer 24.7% vs more specific 26.0%). Do not edit, even beside concrete numbers"),
     ("X", "Ordinal subheading (rejected)",
-     r"(?:^|\n)\s{0,3}#{1,6}\s{0,3}[一二三四五六七八九十][、.]",
-     "—", "Measured: humans use it more than AI (8.6% vs 4.9%); not an AI-tone feature; do not edit"),
-    ('X', '"This means" restatement (rejected)',
-     r"(?:这意味着|这表明|这说明)",
-     "—", "Matched-pair retest: humans use it more; all three measures point the opposite way; do not edit"),
+     I + r"^\s{0,3}#{1,6}\s{0,3}(?:\d+[.)]|[IVX]+\.|(?:first|second|third|fourth|fifth|finally)\b)",
+     "—", "Humans use it more (8.6% vs 4.9%). Do not edit"),
+    ("X", '"This means" restatement (rejected)',
+     I + r"\b(?:this|that|which) (?:means|shows|suggests|indicates|tells us)\b",
+     "—", "Humans use it more on all three measures. Do not edit"),
     ("X", "Empty lead-in to list (rejected)",
-     r"[^，。！？\n]{0,25}[：:]\s*(?:\n|$)",
-     "—", "Matched-pair retest: humans are an order of magnitude higher (normal style for catalogue-like long texts); do not edit"),
+     r"[^.!?\n]{0,60}:\s*$",
+     "—", "Humans use it an order of magnitude more (normal in long catalogue-style pieces). Do not edit"),
 ]
 
-# Em dash / semicolon / quotation marks are counted per character, not per line
+# Counted over the whole text, not per line
 CHAR_HITS = [
-    ("F", "Em dash", "——", "0.80", "Density >2/1k chars: handle first; safe local uses are suggested for change by default; if kept, state its function"),
-    ("F", "Semicolon", "；", "—", "GPT fingerprint (δ+0.80); when safely splittable, suggest splitting by default; if kept, state the hierarchical role"),
-    ("F", "Quotation marks", "“", "—", "Opus uses fewer (δ−0.67); fewer quotes is not necessarily a problem; report only"),
+    ("F", "Em dash", r"—| -- ", "0.80", ">2/1k words: handle first; suggest fixing safe local uses, justify any kept"),
+    ("F", "Semicolon", r";", "—", "GPT fingerprint (δ+0.80); split when safe, justify any kept"),
+    ("F", "Quotation marks", r"“|(?<!\w)\"(?=\w)", "—", "Opus uses fewer (δ−0.67); report only"),
 ]
 
-# Synonym-rotation groups (heuristic for avoiding word repetition; grade B)
+# Synonym-rotation groups (heuristic for avoiding repetition; grade B)
 SYN_GROUPS = [
-    ("使用", "采用", "运用", "利用", "借助"),
-    ("方法", "方式", "途径", "路径", "做法"),
-    ("提升", "提高", "增强", "强化", "优化"),
-    ("显示", "表明", "揭示", "反映", "说明"),
-    ("重要", "关键", "核心", "至关重要"),
-    ("问题", "难题", "挑战", "困境", "痛点"),
-    ("帮助", "协助", "助力", "支持"),
+    ("use", "utilize", "leverage", "employ", "harness"),
+    ("method", "approach", "strategy", "technique", "mechanism"),
+    ("improve", "enhance", "boost", "strengthen", "optimize", "elevate"),
+    ("show", "reveal", "indicate", "demonstrate", "highlight", "underscore"),
+    ("important", "crucial", "critical", "vital", "essential", "pivotal"),
+    ("problem", "challenge", "issue", "pain point", "hurdle"),
+    ("help", "assist", "empower", "support", "enable"),
 ]
 
-# Thresholds [tunable]: recalibrate when the corpus changes
-TH_SENT_CV = 0.55      # sentence-length CV below this → rhythm too uniform (v1 measured: human 0.67 / AI 0.58)
-TH_SECT_CV = 0.45      # section-length CV below this → section lengths too uniform
-TH_HEAD_KK = 0.50      # headings per 1k chars above this → split too finely
-TH_ISO_100P = 8.0      # isomorphic pairs per 100 paras above this → too many (human 4.81 / AI 9.41)
+# Thresholds [tunable] — from the Chinese study; ponytail: uncalibrated for English, rerun compare-human-ai.py on an English corpus
+TH_SENT_CV = 0.55      # sentence-length CV below → uniform rhythm
+TH_SECT_CV = 0.45      # section-length CV below → uniform sections
+TH_HEAD_KK = 0.50      # headings per 1k words above → split too finely
+TH_ISO_100P = 8.0      # isomorphic pairs per 100 paras above → too many
 
-# Human reference lines (median of 270 matched-pair measurements; see Downloads/分析结果/配对指标结果-按模型分列.csv).
-# ref looks like "0.80" (human median per 1k chars) or "4.81/AI9.41"; deviation counts on both sides (two-sided scoring).
+# Human/AI medians from the 270 matched pairs (Chinese corpus)
 HUMAN_REF = {
-    "Sentence-length CV":  {"ref": "0.54",  "ai": "0.46",  "note": "humans vary sentence length; below reference = uniform rhythm", "direction": "low"},
-    "Section-length CV":   {"ref": "0.83",  "ai": "0.31",  "note": "human section lengths vary; below reference = all sections equal length", "direction": "low"},
-    "Headings per 1k chars": {"ref": "0.32", "ai": "1.26", "note": "humans write whole pieces continuously; above reference = split too finely", "direction": "high"},
-    "Isomorphic pairs per 100 paras": {"ref": "5.52", "ai": "8.71", "note": "layer-1 indicator 4 (two-sentence version), medium effect", "direction": "high"},
-    "Isomorphic triples per 100 paras": {"ref": "0.41*", "ai": "0.84*", "note": "*heuristic estimate; semantic judgment in the criteria file", "direction": "high"},
-    "MTLD (rough)":        {"ref": "143",   "ai": "227",   "note": "high = varied wording; AI above human = avoids repetition", "direction": "high"},
-    "Em dash":             {"ref": "0.83",  "ai": "2.02",  "note": "Opus fingerprint +0.95 / GPT −0.54, opposite directions", "direction": "per-model"},
-    "Semicolon":           {"ref": "0.77",  "ai": "1.51",  "note": "GPT fingerprint δ+0.80; Opus −0.11, no difference", "direction": "per-model"},
-    "Quotation marks":     {"ref": "20.0",  "ai": "2.7",   "note": "Opus uses fewer δ−0.67; report only, do not edit", "direction": "low"},
-    "Enumeration comma":   {"ref": "6.12",  "ai": "8.24",  "note": "layer-1 dense enumeration (many items packed into one sentence)", "direction": "high"},
-    "Colon":               {"ref": "3.59",  "ai": "2.70",  "note": "humans use more colons overall; only the conclusion-cue subtype is a real signal, judged at semantic layer", "direction": "low"},
+    "Sentence-length CV": {"ref": "0.54", "ai": "0.46"},
+    "Section-length CV": {"ref": "0.83", "ai": "0.31"},
+    "Headings per 1k words": {"ref": "0.32", "ai": "1.26"},
+    "Isomorphic pairs per 100 paras": {"ref": "5.52", "ai": "8.71"},
+    "Isomorphic triples per 100 paras": {"ref": "0.41*", "ai": "0.84*"},
+    "MTLD (rough)": {"ref": "143", "ai": "227"},
 }
 
 # ---------------- Splitting ----------------
 
 HEADING = re.compile(r"^#{1,6}\s")
-BOLD_LINE = re.compile(r"^\*\*[^*]{2,40}\*\*$")
-LIST_LINE = re.compile(r"^\s{0,3}(?:[-*+]|\d+[.、)])\s")
+BOLD_LINE = re.compile(r"^\*\*[^*]{2,60}\*\*$")
+LIST_LINE = re.compile(r"^\s{0,3}(?:[-*+]|\d+[.)])\s")
 QUOTE_LINE = re.compile(r"^>")
 FENCE = re.compile(r"^```")
 TABLE_LINE = re.compile(r"^\|")
-
-COMMENT = re.compile(
-    r"^(?:听起来|看起来|看上去|听上去|说白了|说到底|换句话说|意味着|值得注意|"
-    r"不难看出|细看|再看|回过头看|问题在于|原因在于|结果是|有意思的是|"
-    r"更重要的是|关键在于|真正的)")
+WORD = re.compile(r"[A-Za-z0-9]+(?:['’-][A-Za-z0-9]+)*")
 
 
-def hanzi(s):
-    return len(re.findall(r"[一-鿿]", s))
+def words(s):
+    return WORD.findall(s)
+
+
+def nwords(s):
+    return len(words(s))
 
 
 def split_sents(para):
-    return [s.strip() for s in re.split(r"[。！？；]", para) if len(s.strip()) >= 4]
+    return [s.strip() for s in re.split(r"(?<=[.!?;])\s+|\n", para) if nwords(s) >= 3]
 
 
 def signature(sent):
-    """Sentence-structure signature: comma count, colon present, bracket present, length bucket (from v1, kept after retest)."""
-    return (sent.count("，"), "：" in sent or ":" in sent,
-            ("（" in sent or "(" in sent), len(sent) // 15)
+    """Sentence-structure signature: comma count, colon, parenthesis, length bucket (8 words)."""
+    return (sent.count(","), ":" in sent, "(" in sent, nwords(sent) // 8)
 
 
-def isomorphic_triples(text):
-    """Triple-isomorphism candidates (for semantic judgment): runs of three sentences pre-filtered by signature.
-    Each carries its line number and the three sentences. The pre-filter is wide (partial isomorphism included);
-    Claude tightens it with the "highly isomorphic" criterion. 270-pair measurement: at the wide threshold
-    AI 71.1% vs human 56.2% has no discriminative power; only the highly-isomorphic tier differs (2.76×)."""
-    out = []
-    for kind, body, first_no in paragraph_blocks(text):
-        if kind != "prose":
-            continue
-        sents = [s for s in split_sents(body) if len(s) > 10]
-        for i in range(len(sents) - 2):
-            sigs = [signature(s) for s in sents[i:i + 3]]
-            if all(s == sigs[0] for s in sigs) and sigs[0][0] >= 1:
-                out.append({"line": first_no,
-                            "sents": sents[i:i + 3]})
-    return out
-
-
-def isomorphic_hits(para, n):
-    sents = [s for s in split_sents(para) if len(s) > 10]
-    hits = []
+def _iso_runs(sents, n):
+    sents = [s for s in sents if nwords(s) > 6]
     for i in range(len(sents) - n + 1):
         sigs = [signature(s) for s in sents[i:i + n]]
         if all(s == sigs[0] for s in sigs) and sigs[0][0] >= 1:
-            hits.append("／".join(sents[i:i + n]))
-    return hits
+            yield sents[i:i + n]
+
+
+def isomorphic_triples(text):
+    """Triple candidates pre-filtered by signature (wide); the model applies the "highly isomorphic"
+    criterion. Wide threshold has no discriminative power (AI 71.1% vs human 56.2%); only the
+    highly-isomorphic tier differs (2.76×)."""
+    return [{"line": no, "sents": run}
+            for kind, body, no in paragraph_blocks(text) if kind == "prose"
+            for run in _iso_runs(split_sents(body), 3)]
+
+
+def isomorphic_hits(para, n):
+    return [" / ".join(run) for run in _iso_runs(split_sents(para), n)]
 
 
 def paragraph_blocks(text):
-    """Split on blank lines and classify blocks; returns [(kind, block_text, first_line_no)]."""
+    """Split on blank lines and classify; returns [(kind, block_text, first_line_no)]."""
     blocks, cur, cur_kind, start = [], [], None, None
     in_fence = False
     for no, line in enumerate(text.splitlines(), 1):
@@ -212,7 +201,7 @@ def paragraph_blocks(text):
 
 
 def mtld(toks, threshold=0.72, min_len=10):
-    """Approximate MTLD (lexical diversity). Chinese has no word segmentation, so 2-char bigrams stand in as pseudo-words; rough."""
+    """Approximate MTLD lexical diversity over lowercase words."""
     if len(toks) < min_len * 4:
         return None
 
@@ -238,27 +227,28 @@ def cv(vals):
     m = sum(vals) / len(vals)
     if m == 0:
         return None
-    var = sum((v - m) ** 2 for v in vals) / len(vals)
-    return (var ** 0.5) / m
+    return (sum((v - m) ** 2 for v in vals) / len(vals)) ** 0.5 / m
+
+
+def syn_present(word, body):
+    """Base form plus simple inflections (s/es/ed/d/ing, e-dropping)."""
+    stem = word[:-1] if word.endswith("e") else word
+    return re.search(rf"(?i)\b(?:{word}|{stem}(?:es|ed|ing|s|d)|{word}s)\b", body)
 
 
 # ---------------- Metrics ----------------
 
 def measure_docs(docs):
-    total_han = 0
+    total_words = 0
     regex_hits = {name: [] for _, name, *_ in REGEX_HITS}
     char_counts = {name: 0 for _, name, *_ in CHAR_HITS}
     syn_hits = []
-    n_para = n_head = 0
-    iso2 = iso3 = 0
-    sent_lens, sect_lens = [], []
-    all_bigrams = []
+    n_para = n_head = iso2 = iso3 = 0
+    sent_lens, sect_lens, all_words = [], [], []
 
     for fname, text in docs:
-        lines = text.splitlines()
-        # Per-line regex hits (skip code fences)
         in_fence = False
-        for no, line in enumerate(lines, 1):
+        for no, line in enumerate(text.splitlines(), 1):
             if FENCE.match(line):
                 in_fence = not in_fence
                 continue
@@ -266,117 +256,84 @@ def measure_docs(docs):
                 continue
             for _, name, pat, *_ in REGEX_HITS:
                 for m in re.finditer(pat, line):
-                    excerpt = m.group(0)
-                    regex_hits[name].append(
-                        {"file": fname, "line": no, "excerpt": excerpt[:60]})
-        for _, name, ch, *_ in CHAR_HITS:
-            char_counts[name] += text.count(ch)
+                    regex_hits[name].append({"file": fname, "line": no, "excerpt": m.group(0)[:100]})
+        for _, name, pat, *_ in CHAR_HITS:
+            char_counts[name] += len(re.findall(pat, text))
 
-        # Structure
         blocks = paragraph_blocks(text)
-        sect_chars = 0
-        for kind, body, first_no in blocks:
+        sect = 0
+        for kind, body, no in blocks:
             if kind == "heading":
                 n_head += 1
-                if sect_chars > 0:
-                    sect_lens.append(sect_chars)
-                sect_chars = 0
+                if sect:
+                    sect_lens.append(sect)
+                sect = 0
                 continue
             if kind != "prose":
                 continue
             n_para += 1
-            h = hanzi(body)
-            sect_chars += len(body)
-            for s in split_sents(body):
-                sent_lens.append(hanzi(s) or len(s))
+            sect += nwords(body)
+            sent_lens.extend(nwords(s) for s in split_sents(body))
             iso2 += len(isomorphic_hits(body, 2))
             iso3 += len(isomorphic_hits(body, 3))
-            all_bigrams.extend(
-                body[i:i + 2] for i in range(len(body) - 1) if hanzi(body[i:i + 2]) == 2)
-        if sect_chars > 0:
-            sect_lens.append(sect_chars)
-
-        # Synonym rotation (≥2 distinct members in one paragraph)
-        for kind, body, first_no in blocks:
-            if kind != "prose":
-                continue
+            all_words.extend(w.lower() for w in words(body))
             for group in SYN_GROUPS:
-                found = [w for w in group if w in body]
+                found = [w for w in group if syn_present(w, body)]
                 if len(found) >= 2:
-                    syn_hits.append({"file": fname, "line": first_no,
-                                     "excerpt": "／".join(found),
-                                     "context": body[:70]})
-        total_han += hanzi(text)
+                    syn_hits.append({"file": fname, "line": no, "excerpt": " / ".join(found),
+                                     "context": body[:120]})
+        if sect:
+            sect_lens.append(sect)
+        total_words += nwords(text)
 
-    kk = total_han / 1000 or 1
+    kk = total_words / 1000 or 1
     sent_cv = cv(sent_lens) if sent_lens else None
     sect_cv = cv(sect_lens) if len(sect_lens) >= 3 else None
-
     return {
-        "meta": {
-            "docs": len(docs), "han_10k": round(total_han / 10000, 2),
-            "paragraphs": n_para, "headings": n_head,
-        },
-        "density": {name: round(n / kk, 3) for name, n in
-                    [(nm, len(v)) for _, nm, *_ in REGEX_HITS for v in [regex_hits[nm]]]},
-        "char_density": {name: round(n / kk, 3) for name, n in char_counts.items()},
+        "meta": {"docs": len(docs), "words": total_words, "paragraphs": n_para, "headings": n_head},
+        "density": {nm: round(len(regex_hits[nm]) / kk, 3) for _, nm, *_ in REGEX_HITS},
+        "char_density": {nm: round(n / kk, 3) for nm, n in char_counts.items()},
         "hits": regex_hits,
         "syn_hits": syn_hits,
         "structure": {
             "Sentence-length CV": round(sent_cv, 3) if sent_cv else None,
             "Section-length CV": round(sect_cv, 3) if sect_cv else None,
-            "Headings per 1k chars": round(n_head / kk, 3),
+            "Headings per 1k words": round(n_head / kk, 3),
             "Isomorphic pairs per 100 paras": round(iso2 / n_para * 100, 2) if n_para else None,
             "Isomorphic triples per 100 paras": round(iso3 / n_para * 100, 2) if n_para else None,
-            "MTLD (rough)": mtld(all_bigrams),
+            "MTLD (rough)": mtld(all_words),
         },
     }
 
 
-# ---------------- Semantic-layer candidate extraction ----------------
+# ---------------- Semantic-layer candidates ----------------
 
-def first_prose_blocks(text, max_gap=2):
-    """Prose blocks split on blank lines, with headings/code/tables dropped. (max_gap is accepted but unused.)"""
-    return [(b, n) for kind, b, n in paragraph_blocks(text) if kind == "prose"]
-
-
-NOISE_RE = re.compile(r"\]\(|\]\s*\(|\||^!|^中文\s*\|")
+NOISE_RE = re.compile(r"\]\(|\]\s*\(|\||^!")
+CAND_CAPS = {"rename": 60, "cohesion": 60, "colon": 80, "iso3": 60}  # long-doc caps; overflow sampled and flagged
 
 
 def clean_para(b):
-    """Strip markdown emphasis/link syntax and return plain text; noise lines (nav/tables/images) return empty."""
+    """Strip markdown emphasis/links; noise blocks (nav/tables/images) return empty."""
     if NOISE_RE.search(b[:200]):
         return ""
     t = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", b)
     t = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", t)
-    t = re.sub(r"[*`_#>]", "", t)
-    return t.strip()
-
-
-CAND_CAPS = {"rename": 60, "cohesion": 60, "colon": 80, "iso3": 60}  # caps for long docs; overflow is truncated and flagged
+    return re.sub(r"[*`_#>]", "", t).strip()
 
 
 def extract_candidates(docs):
-    """Four kinds of semantic-layer candidates. Each carries its criterion type. The in-session Claude
-    judges each one closed-set per references/semantic-criteria.md (label + confidence) and writes results
-    back into the same JSON structure in the label/confidence/reason fields."""
+    """Four candidate types; the model writes label/confidence/reason back into each entry."""
     rename, cohesion, colon, iso3 = [], [], [], []
     for fname, text in docs:
-        blocks = [(clean_para(b), no) for b, no in first_prose_blocks(text)]
-        blocks = [(b, no) for b, no in blocks if hanzi(b) >= 20]
-        # 1) Synonym renaming: paragraph level (one candidate per paragraph; judge how many substantive rewordings)
-        for b, no in blocks:
-            if hanzi(b) >= 30:
-                rename.append({"type": "rename", "file": fname, "line": no, "para": b})
-        # 2) Cohesion chain: inter-paragraph interface (last sentence of previous para + first of next)
-        for i in range(len(blocks) - 1):
-            a, b = blocks[i][0], blocks[i + 1][0]
-            tail = split_sents(a) or [a[-60:]]
-            head = split_sents(b) or [b[:60]]
-            cohesion.append({"type": "cohesion",
-                             "file": fname, "line": blocks[i + 1][1],
+        blocks = [(clean_para(b), no) for kind, b, no in paragraph_blocks(text) if kind == "prose"]
+        blocks = [(b, no) for b, no in blocks if nwords(b) >= 15]
+        rename += [{"type": "rename", "file": fname, "line": no, "para": b}
+                   for b, no in blocks if nwords(b) >= 25]
+        for (a, _), (b, no) in zip(blocks, blocks[1:]):
+            tail = split_sents(a) or [a[-120:]]
+            head = split_sents(b) or [b[:120]]
+            cohesion.append({"type": "cohesion", "file": fname, "line": no,
                              "prev_tail": tail[-1], "next_head": head[0]})
-        # 3) Colon sentences: body colons (excluding quotes, headings, list lines)
         in_fence = False
         for no, line in enumerate(text.splitlines(), 1):
             if FENCE.match(line):
@@ -384,113 +341,82 @@ def extract_candidates(docs):
                 continue
             if in_fence or HEADING.match(line) or LIST_LINE.match(line) or NOISE_RE.search(line):
                 continue
-            for m in re.finditer(r"([^：:，。！？\n]{2,30})[：:](.{2,60})", line):
-                colon.append({"type": "colon",
-                              "file": fname, "line": no,
-                              "colon_before": m.group(1), "colon_after": m.group(2)[:60],
-                              "sentence": line.strip()[:120]})
-        # 4) Triple isomorphism: signature pre-filter + Claude judges "highly isomorphic"
-        iso3.extend(dict(c, file=fname) for c in isomorphic_triples(text))
+            for m in re.finditer(r"([^:,.!?\n]{2,60}):(?!//)\s*(.{2,100})", line):
+                colon.append({"type": "colon", "file": fname, "line": no,
+                              "colon_before": m.group(1), "colon_after": m.group(2),
+                              "sentence": line.strip()[:200]})
+        iso3 += [dict(c, file=fname) for c in isomorphic_triples(text)]
+
     all_c = {"rename": rename, "cohesion": cohesion, "colon": colon, "iso3": iso3}
-    truncated = {k: len(v) > cap for k, v, cap in
-                 ((k, v, CAND_CAPS[k]) for k, v in all_c.items())}
     meta = {"n_candidates": sum(min(len(v), CAND_CAPS[k]) for k, v in all_c.items())}
     meta.update({f"n_{k}": len(v) for k, v in all_c.items()})
-    meta["truncated"] = {k: cap for k, cap in CAND_CAPS.items() if truncated[k]} or False
-    if meta["truncated"]:
-        # Uniform sampling keeps candidates (not biased to the head); judged coverage = kept / total
-        for k, cap in CAND_CAPS.items():
-            if truncated[k]:
-                step = len(all_c[k]) / cap
-                all_c[k] = [all_c[k][int(i * step)] for i in range(cap)]
-    return {"meta": meta,
-            "rename": all_c["rename"], "cohesion": all_c["cohesion"],
-            "colon": all_c["colon"], "iso3": all_c["iso3"]}
+    over = {k: cap for k, cap in CAND_CAPS.items() if len(all_c[k]) > cap}
+    meta["truncated"] = over or False
+    for k, cap in over.items():  # uniform sampling, not head-biased
+        step = len(all_c[k]) / cap
+        all_c[k] = [all_c[k][int(i * step)] for i in range(cap)]
+    return {"meta": meta, **all_c}
 
 
-# ---------------- Report ----------------
+# ---------------- Text report ----------------
 
 def fmt_report(r, max_hits):
-    out = ["Less-AI-tone detection report (v2: detect only, no rewriting)", ""]
     m = r["meta"]
-    out.append(f"Corpus: {m['docs']} docs / {m['han_10k']} 10k Han chars / {m['paragraphs']} paragraphs / {m['headings']} headings")
-    out.append("")
+    out = ["Less AI tone detection report (detect only, no rewriting)", "",
+           f"Corpus: {m['docs']} docs / {m['words']} words / {m['paragraphs']} paragraphs / {m['headings']} headings",
+           "References come from a Chinese-corpus study: direction only, not English-calibrated.", ""]
 
-    def emit(level, title):
-        rows = [(nm, ref, adv) for lv, nm, _, ref, adv in REGEX_HITS if lv == level]
-        hits = r["hits"]
-        dens = r["density"]
-        any_row = False
-        sec = [f"[{level}] {title}"]
-        for nm, ref, adv in rows:
-            n = len(hits.get(nm, []))
-            d = dens.get(nm, 0)
-            if n == 0:
+    titles = {"A": "Mechanical-fix candidates (model reviews; edit after user reply)",
+              "B": "Suggested-fix candidates (model filters each; edit after user reply)",
+              "H": "Human-review zone (kept by default; only if the user asks)",
+              "X": "Rejected features (not AI tone; counts only, do not edit)"}
+    for level, title in titles.items():
+        sec = []
+        for lv, nm, _, ref, adv in REGEX_HITS:
+            hits = r["hits"].get(nm, [])
+            if lv != level or not hits:
                 continue
-            any_row = True
-            ref_s = f" (human ≈{ref}/1k chars)" if ref != "—" else ""
-            sec.append(f"  {nm}: {n} hits, {d}/1k chars{ref_s}")
-            sec.append(f"    → {adv}")
-            for h in hits[nm][:max_hits]:
-                sec.append(f"      · {h['file']}:{h['line']}  {h['excerpt']}")
-        if any_row:
-            out.extend(sec)
-            out.append("")
-        return any_row
+            ref_s = f" (ref ≈{ref}/1k)" if ref != "—" else ""
+            sec += [f"  {nm}: {len(hits)} hits, {r['density'][nm]}/1k words{ref_s}", f"    → {adv}"]
+            sec += [f"      · {h['file']}:{h['line']}  {h['excerpt']}" for h in hits[:max_hits]]
+        if sec:
+            out += [f"[{level}] {title}", *sec, ""]
 
-    emit("A", "Grade A candidates (suggested after model review; edit after user reply)")
-    emit("B", "Grade B candidates (model filters item by item; edit after user reply)")
-    emit("C", "Report only (not edited by default)")
-    emit("H", "Human-review zone (kept by default; review only if the user asks)")
-    emit("X", "Rejected features (measured as not AI tone; counts only, do not edit)")
-
-    # Fingerprint
-    sec = ["[F] Fingerprint (per-model features; read with direction)"]
+    out.append("[F] Fingerprints (per-model; read with direction)")
     for _, nm, _, ref, adv in CHAR_HITS:
-        d = r["char_density"].get(nm, 0)
-        sec.append(f"  {nm}: {d}/1k chars" + (f" (human ≈{ref})" if ref != "—" else ""))
-        sec.append(f"    → {adv}")
-    out.extend(sec)
+        out += [f"  {nm}: {r['char_density'][nm]}/1k words" + (f" (ref ≈{ref})" if ref != "—" else ""),
+                f"    → {adv}"]
     out.append("")
 
-    # Synonym rotation
     if r["syn_hits"]:
-        out.append("[B] Word repetition avoided (synonym-rotation heuristic; false positives possible; review each)")
+        out.append("[B] Synonym rotation (heuristic; false positives likely; review each)")
         for h in r["syn_hits"][:max_hits * 2]:
-            out.append(f"  · {h['file']}:{h['line']}  rotation: {h['excerpt']}")
-            out.append(f"    {h['context']}")
+            out += [f"  · {h['file']}:{h['line']}  rotation: {h['excerpt']}", f"    {h['context']}"]
         out.append("")
 
-    # Structure
     s = r["structure"]
-    out.append("[C] Structure and rhythm (vs human reference lines; flagged only on deviation in the noted direction)")
-    flags = []
-    if s["Sentence-length CV"] is not None and s["Sentence-length CV"] < TH_SENT_CV:
-        ref = HUMAN_REF["Sentence-length CV"]
-        flags.append(f"Sentence-length CV={s['Sentence-length CV']} (human median {ref['ref']} / AI {ref['ai']}; low = uniform rhythm)")
-    if s["Section-length CV"] is not None and s["Section-length CV"] < TH_SECT_CV:
-        ref = HUMAN_REF["Section-length CV"]
-        flags.append(f"Section-length CV={s['Section-length CV']} (human median {ref['ref']} / AI {ref['ai']}; low = uniform section lengths)")
-    if s["Headings per 1k chars"] > TH_HEAD_KK:
-        ref = HUMAN_REF["Headings per 1k chars"]
-        flags.append(f"Headings {s['Headings per 1k chars']}/1k chars (human median {ref['ref']} / AI {ref['ai']}; high = split too finely)")
-    if s["Isomorphic pairs per 100 paras"] is not None and s["Isomorphic pairs per 100 paras"] > TH_ISO_100P:
-        ref = HUMAN_REF["Isomorphic pairs per 100 paras"]
-        flags.append(f"Isomorphic pairs {s['Isomorphic pairs per 100 paras']}/100 paras (human {ref['ref']} / AI {ref['ai']}; high)")
-    if s["Isomorphic triples per 100 paras"] and s["Isomorphic triples per 100 paras"] > 0.8:
-        ref = HUMAN_REF["Isomorphic triples per 100 paras"]
-        flags.append(f"Isomorphic triples {s['Isomorphic triples per 100 paras']}/100 paras (human {ref['ref']} / AI {ref['ai']}; high; see criteria file)")
-    for f_ in flags:
-        out.append(f"  ⚠ {f_}")
-    if not flags:
-        out.append("  (all structure/rhythm metrics within reference ranges)")
+    checks = [("Sentence-length CV", lambda v: v < TH_SENT_CV, "low = uniform rhythm"),
+              ("Section-length CV", lambda v: v < TH_SECT_CV, "low = uniform sections"),
+              ("Headings per 1k words", lambda v: v > TH_HEAD_KK, "high = split too finely"),
+              ("Isomorphic pairs per 100 paras", lambda v: v > TH_ISO_100P, "high"),
+              ("Isomorphic triples per 100 paras", lambda v: v > 0.8, "high; see criteria file")]
+    out.append("[C] Structure and rhythm (flagged only when off the reference in the noted direction)")
+    flags = [f"  ⚠ {k}={s[k]} (human {HUMAN_REF[k]['ref']} / AI {HUMAN_REF[k]['ai']}; {note})"
+             for k, bad, note in checks if s[k] is not None and bad(s[k])]
+    out += flags or ["  (all within reference ranges)"]
     if s["MTLD (rough)"]:
         ref = HUMAN_REF["MTLD (rough)"]
-        out.append(f"  MTLD (rough)={s['MTLD (rough)']} (human median ≈{ref['ref']} / AI ≈{ref['ai']}; above human = avoids repetition; rough estimate, reference only)")
-    out.append("")
-    out.append("Suggested order: A first, then B. C-grade rewrites need structural changes or added information, "
-               "which is beyond the whitelist boundary; consider only if the user explicitly asks.")
+        out.append(f"  MTLD (rough)={s['MTLD (rough)']} (human ≈{ref['ref']} / AI ≈{ref['ai']}; "
+                   "higher = avoids repetition; scale differs across languages)")
+    out += ["", "Order: A, then B. C needs structural changes; only if the user asks."]
     return "\n".join(out)
+
+
+def load_docs(p):
+    if p.is_file():
+        return [(p.name, p.read_text(encoding="utf-8", errors="ignore"))]
+    return [(str(f.relative_to(p)), f.read_text(encoding="utf-8", errors="ignore"))
+            for f in sorted(p.rglob("*")) if f.suffix.lower() in EXTS and f.is_file()]
 
 
 def main():
@@ -498,49 +424,33 @@ def main():
     ap.add_argument("target", help="file or directory")
     ap.add_argument("--json", action="store_true", help="output JSON")
     ap.add_argument("--max-hits", type=int, default=5, help="max hits listed per item")
-    ap.add_argument("--candidates", action="store_true",
-                    help="extract semantic-layer candidates (rename/cohesion/colon/iso3); skip regular detection")
-    ap.add_argument("--out", help="candidate JSON output path (default: stdout)")
+    ap.add_argument("--candidates", action="store_true", help="extract semantic-layer candidates instead")
+    ap.add_argument("--out", help="candidate JSON path (default: stdout)")
     args = ap.parse_args()
 
     p = Path(args.target)
     if not p.exists():
-        print(f"Path does not exist: {p}", file=sys.stderr)
-        sys.exit(1)
-    docs = []
-    if p.is_file():
-        docs.append((p.name, p.read_text(encoding="utf-8", errors="ignore")))
-    else:
-        for f in sorted(p.rglob("*")):
-            if f.suffix.lower() in EXTS and f.is_file():
-                docs.append((str(f.relative_to(p)),
-                             f.read_text(encoding="utf-8", errors="ignore")))
+        sys.exit(f"Path does not exist: {p}")
+    docs = load_docs(p)
     if not docs:
-        print("No .md/.txt files found", file=sys.stderr)
-        sys.exit(1)
+        sys.exit("No .md/.txt files found")
 
     if args.candidates:
         c = extract_candidates(docs)
         payload = json.dumps(c, ensure_ascii=False, indent=1)
-        if args.out:
-            Path(args.out).write_text(payload, encoding="utf-8")
-            n = c["meta"]["n_candidates"]
-            print(f"{n} candidates → {args.out}"
-                  f" (rename {c['meta']['n_rename']} / cohesion {c['meta']['n_cohesion']}"
-                  f" / colon {c['meta']['n_colon']} / iso3 {c['meta']['n_iso3']})")
-        else:
+        if not args.out:
             print(payload)
+            return
+        Path(args.out).write_text(payload, encoding="utf-8")
+        mm = c["meta"]
+        print(f"{mm['n_candidates']} candidates → {args.out} (rename {mm['n_rename']} / cohesion "
+              f"{mm['n_cohesion']} / colon {mm['n_colon']} / iso3 {mm['n_iso3']})")
         return
 
     r = measure_docs(docs)
-    if r["meta"]["han_10k"] < 0.05:
-        print("Too few Han characters (<500); detection is meaningless", file=sys.stderr)
-        sys.exit(1)
-
-    if args.json:
-        print(json.dumps(r, ensure_ascii=False, indent=1))
-    else:
-        print(fmt_report(r, args.max_hits))
+    if r["meta"]["words"] < 300:
+        sys.exit("Too few words (<300); detection is meaningless")
+    print(json.dumps(r, ensure_ascii=False, indent=1) if args.json else fmt_report(r, args.max_hits))
 
 
 if __name__ == "__main__":

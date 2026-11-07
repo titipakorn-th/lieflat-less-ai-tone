@@ -1,0 +1,146 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>Less-AI-tone report · examples/agent-memory-case/00-original.md</title><style>
+body{font-family:-apple-system,sans-serif;max-width:760px;margin:40px auto;line-height:1.9;font-size:16px;padding:0 20px;color:#222}
+h1{font-size:22px}h2{font-size:19px;border-bottom:2px solid #ccc;padding-bottom:6px;margin-top:2.2em}
+h3{font-size:16px;margin-bottom:0.4em}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:0.6em 0 1.4em}
+th,td{border:1px solid #ddd;padding:5px 10px;text-align:left;vertical-align:top}
+th{background:#f5f5f5}
+.warn{background:#fff3cd;padding:14px 18px;border-radius:8px;margin-bottom:1.5em;font-size:14px}
+.legend{color:#555;margin-bottom:2em;font-size:14px}
+.chg,.ins{color:#d32f2f;font-weight:600}
+.del{color:#aaa;text-decoration:line-through}
+.up{color:#c62828;font-weight:600}.down{color:#2e7d32;font-weight:600}.flat{color:#777}
+.tagA{background:#e3f2fd;padding:1px 7px;border-radius:4px;font-size:12px}
+.tagB{background:#fff3e0;padding:1px 7px;border-radius:4px;font-size:12px}
+.tagC{background:#f3e5f5;padding:1px;border-radius:4px;font-size:12px}
+.tagF{background:#eceff1;padding:1px 7px;border-radius:4px;font-size:12px}
+.tagX{background:#fafafa;color:#888;padding:1px 7px;border-radius:4px;font-size:12px}
+.tagH{background:#fce4ec;padding:1px 7px;border-radius:4px;font-size:12px}
+.small{color:#777;font-size:13px}
+.human{color:#2e7d32}
+details{margin:0.3em 0}
+summary{cursor:pointer}
+p{margin:0 0 1.1em}
+</style></head><body>
+<h1>Less AI tone · before/after report</h1>
+<p class="small">examples/agent-memory-case/00-original.md → examples/agent-memory-case/02-revised.md</p>
+<div class="legend">Legend: <span class="chg">red</span> = new revised text; <span class="del">grey strikethrough</span> = original text removed/replaced; in the metric table, ↓/↑ = improved/worsened relative to the human reference.</div>
+<h2>1. Metric comparison</h2>
+<table><tr><th>Metric</th><th>Before</th><th>After</th><th>Change</th><th>Human ref</th></tr><tr><td>'Not A but B' contrast</td><td>1.64</td><td>0.546</td><td><span class="down">↓</span></td><td class="human">≈0.22</td></tr><tr><td>Conclusion-cue colon</td><td>2.734</td><td>0.546</td><td><span class="down">↓</span></td><td class="human">≈0.08</td></tr><tr><td>Dense lists</td><td>4.921</td><td>4.367</td><td><span class="down">↓</span></td><td class="human">≈1.78</td></tr><tr><td>Sentence-length variation</td><td>0.662</td><td>0.671</td><td><span class="flat">→</span></td><td class="human">human ≈0.54 / AI ≈0.46</td></tr><tr><td>Section-length variation</td><td>—</td><td>—</td><td><span class="flat">→</span></td><td class="human">human ≈0.83 / AI ≈0.31</td></tr><tr><td>Section density</td><td>0.0</td><td>0.0</td><td><span class="flat">→</span></td><td class="human">human ≈0.32 / AI ≈1.26</td></tr><tr><td>Adjacent-sentence isomorphism</td><td>4.35</td><td>4.35</td><td><span class="flat">→</span></td><td class="human">human ≈5.52 / AI ≈8.71</td></tr><tr><td>Triple isomorphism (coarse)</td><td>0.0</td><td>0.0</td><td><span class="flat">→</span></td><td class="human">human ≈0.41 / AI ≈0.84</td></tr><tr><td>Lexical variety</td><td>133</td><td>135</td><td><span class="flat">→</span></td><td class="human">human ≈143 / AI ≈227</td></tr><tr><td>Em dash<span class='small'> (fingerprint)</span></td><td>3.827</td><td>3.821</td><td><span class="flat">→</span></td><td class="small">Opus heavy +0.95 / GPT light −0.54; opposite directions, read per model</td></tr><tr><td>Semicolon<span class='small'> (fingerprint)</span></td><td>2.187</td><td>0.546</td><td><span class="flat">→</span></td><td class="small">GPT fingerprint δ+0.80; Opus no difference</td></tr><tr><td>Quotation marks<span class='small'> (fingerprint)</span></td><td>16.949</td><td>16.921</td><td><span class="flat">→</span></td><td class="small">Opus uses fewer δ−0.67; report only, do not edit</td></tr></table><p class="small">↓/↑ green = moved toward the human reference (improved), red = worse; fingerprint rows have no direction. Reference values = human medians from 270 matched pairs (per 1k words or CV; Chinese-corpus study, direction only); see RESEARCH.md.</p>
+<h2>Semantic-layer judgments (in-session model judges item by item per the experiment criteria)</h2>
+<p class="small">Four items are statistically significant in the 270-pair corpus; synonym renaming rests on a single-model criterion (one tier weaker). Criteria: references/semantic-criteria.md.</p>
+<h3>Synonym renaming (paragraph level) <span class='small'>29 items: 0 groups 24, 1 group 5</span></h3>
+<h3>Cohesion method (inter-paragraph interface) <span class='small'>34 items: explicit carry-over 26, related but abrupt shift 8</span></h3>
+<p><span class="up">⚠  (longest chain 9 interfaces; ≥6 is an AI feature, human median 2)</span></p>
+<p class='small'><strong>explicit carry-over</strong> (confidence: high) 00-original.md:7  Nine minutes after paying, she discovered the AI had forgotten everything. → This is not an isolated case.<br>reason: 'This is not an isolated case' continues the musician's story.</p>
+<p class='small'><strong>explicit carry-over</strong> (confidence: medium) 00-original.md:9  At least a goldfish never promised the user "I'll remember." → The industry has a buzzword for this: "Agent Me<br>reason: 'The industry has a buzzword for this' continues the discussion of the memory failure.</p>
+<p class='small'><strong>explicit carry-over</strong> (confidence: medium) 00-original.md:15  It is which shelf you put it on, whether you labeled it, and where your eyes go first when you open the door. <br>reason: 'The name Agent Memory' picks up the naming point from the analogy.</p>
+<p class='small'><strong>explicit carry-over</strong> (confidence: high) 00-original.md:19  The result is somewhat counterintuitive. → Under identical test conditions, the simplest approach (keep the ra<br>reason: 'The result is somewhat counterintuitive' is followed by the result it refers to.</p>
+<p class='small'><strong>explicit carry-over</strong> (confidence: high) 00-original.md:21  BM25, a text retrieval algorithm born decades ago, ranked consistently near the top across three rounds of eva<br>reason: 'What does this mean?' asks about the BM25 result just given.</p>
+<p class='small'><strong>explicit carry-over</strong> (confidence: medium) 00-original.md:23  When the information is needed, the retrieval system gets a pile of dry conclusions, stripped of their origina<br>reason: 'The evaluation data is clear' continues the argument about the compression losses.</p>
+<p class='small'><strong>explicit carry-over</strong> (confidence: high) 00-original.md:25  A one-time LLM extraction is a clearly negative-ROI move. → This conclusion has one important boundary conditi<br>reason: 'This conclusion' refers to the negative-ROI claim just made.</p>
+<p class='small'><strong>explicit carry-over</strong> (confidence: medium) 00-original.md:27  But if the content is compressed and stored, waiting to be hit by passive retrieval, a miss is a miss. → So th<br>reason: 'So the real question' draws the consequence of the boundary condition; the inference holds.</p>
+<p class='small'><strong>explicit carry-over</strong> (confidence: high) 00-original.md:33  The context of the previous conversation is gone, and no mechanism carries yesterday's key information into to<br>reason: 'What does this resemble?' asks for the analogy of the previous passage.</p>
+<p class='small'><strong>explicit carry-over</strong> (confidence: low) 00-original.md:37  When the client calls, all you can say is, "Hello, may I ask who is calling?" → Short-term memory — a summary <br>reason: List item junction: the three layers answer the same question.</p>
+<p class='small'><strong>explicit carry-over</strong> (confidence: low) 00-original.md:39  It answers "what have I been busy with lately?" → Core memory — preferences and agreements that stay stable ac<br>reason: List item junction: the items are parallel members of the same list.</p>
+<p class='small'><strong>explicit carry-over</strong> (confidence: low) 00-original.md:41  It is "what you should know without my having to ask." For example, the user's preferred communication style, <br>reason: List item junction: the archival layer continues the same list of layers.</p>
+<p class='small'><strong>explicit carry-over</strong> (confidence: medium) 00-original.md:45  It is "everything we have discussed before." → Because the three layers correspond to three completely differe<br>reason: 'Because the three layers correspond' explains why three layers are needed; the inference holds.</p>
+<p class='small'><strong>explicit carry-over</strong> (confidence: medium) 00-original.md:47  Archival memory is the company filing cabinet: you open it only when you know what you are looking for. → Sche<br>reason: 'Schemes that put all memory into one layer' is the alternative the three-layer argument answers.</p>
+<p class='small'><strong>explicit carry-over</strong> (confidence: high) 00-original.md:53  You should just remember them. → If these three points had been automatically injected when she opened a new c<br>reason: 'You should just remember them' is followed by the consequence of remembering.</p>
+<h3>Colon classification <span class='small'>16 items: conclusion cue 6, heading/time/ratio metadata or layout 3, quotation or speech 2, other body colon 2, definition or explanation 2, empty cue 1</span></h3>
+<p class='small'><strong>conclusion cue</strong> (confidence: medium) 00-original.md:31  Back to Naomi's story. Why did her AI assistant forget everything overnight? The technical reason is actually <br>reason: 'The technical reason is actually simple' is an independent judgment that the following explanation </p>
+<p class='small'><strong>conclusion cue</strong> (confidence: high) 00-original.md:49  Core memory is the most subtle layer in the entire design. Existing benchmarks all test "the user asks a quest<br>reason: 'Core memory solves a different problem' is an independent judgment that the question after the colo</p>
+<p class='small'><strong>conclusion cue</strong> (confidence: medium) 00-original.md:51  Naomi's expectations were actually simple: I told you my monthly income target is ¥400,000–500,000 (it must be<br>reason: 'Naomi's expectations were actually simple' is an independent judgment that the list of expectations</p>
+<p class='small'><strong>conclusion cue</strong> (confidence: medium) 00-original.md:63  This is a deeper problem: a team's knowledge also needs "memory levels."<br>reason: 'This is a deeper problem' is an independent judgment that the content after the colon develops.</p>
+<p class='small'><strong>conclusion cue</strong> (confidence: high) 00-original.md:86  The eternal tension between write cost and retrieval quality. The evaluation data reveals an industry-wide pat<br>reason: 'The evaluation data reveals an industry-wide pattern' is an independent judgment that the following</p>
+<p class='small'><strong>conclusion cue</strong> (confidence: medium) 00-original.md:92  Memory is the least glamorous infrastructure in agent products. No one posts on social media that "your AI rem<br>reason: 'But it determines something fundamental' is an independent judgment with a predicate, developed by </p>
+<h2>2. Graded findings (before-edit detection)</h2>
+<h3><span class="tagA">A</span> Mechanical fixes (after model review removes false positives)</h3>
+<div><strong>Contrast reversal</strong> 3 hits
+<details><summary class='small'>show hits</summary>
+<p class='small'>00-original.md:13  is not the refrigerator's capacity. It is</p>
+<p class='small'>00-original.md:72  isn't settled yet," but</p>
+<p class='small'>00-original.md:76  not about storing more; it is</p>
+</details></div>
+<div><strong>Cue-phrase colon</strong> 5 hits
+<details><summary class='small'>show hits</summary>
+<p class='small'>00-original.md:7  the same awkward fact:</p>
+<p class='small'>00-original.md:31  The technical reason is actually simple:</p>
+<p class='small'>00-original.md:49  a different problem:</p>
+<p class='small'>00-original.md:63  a deeper problem:</p>
+<p class='small'>00-original.md:86  an industry-wide pattern:</p>
+</details></div>
+<h3><span class="tagB">B</span> Suggested fixes (model filters item by item)</h3>
+<div><strong>Serial list ≥3</strong> 9 hits
+<details><summary class='small'>show hits</summary>
+<p class='small'>00-original.md:13  you put it on, whether you labeled it, and where your eyes go</p>
+<p class='small'>00-original.md:25  If, at read time, the agent decides for</p>
+<p class='small'>00-original.md:39  user's preferred communication style, the team's tech stack, and a few hard lines</p>
+<p class='small'>00-original.md:47  For free users, lightweight conversations, and scenarios that need fast</p>
+<p class='small'>00-original.md:67  verbatim user interview quotes, data screenshots, original external articles</p>
+<p class='small'>00-original.md:68  analysis, research, and thinking based on raw</p>
+<p class='small'>00-original.md:70  PRD drafts, meeting notes, RFCs</p>
+<p class='small'>00-original.md:70  ship, get finalized, get archived</p>
+<p class='small'>00-original.md:86  that delivers cheap writes, rigorous updates, and zero LLM cost at</p>
+</details></div>
+<h3><span class="tagX">X</span> Rejected features (measured as not AI tone; do not edit)</h3>
+<div><strong>Empty lead-in to list (rejected)</strong> 2 hits
+<details><summary class='small'>show hits</summary>
+<p class='small'>00-original.md:35  The current approach solves this in three layers:</p>
+<p class='small'>00-original.md:65   every file in the team space into four tiers by credibility:</p>
+</details></div>
+<p class="small">Grade C (structure/rhythm) is in the metric table; F (fingerprint) is in its fingerprint rows; metaphor fit can only be judged by human review, so it is kept this round. Relevant sentences are listed for judgment only when the user asks.</p>
+<h2>3. Marked before/after comparison</h2>
+<p>Agent Memory: Why Your AI Assistant Keeps Forgetting</p>
+<p>A Japanese musician spent 10 hours pouring out all of her plans to an AI, and paid $30 for the service the next day. Nine minutes after paying, she discovered the AI had forgotten everything.</p>
+<p>Her last words were: "In the end, nothing accumulates."</p>
+<p>This is not an isolated case. Nearly every team building agent products faces the same awkward fact: users trust the AI as a partner, but its memory is worse than a goldfish's. At least a goldfish never promised the user "I'll remember."</p>
+<p>The industry has a buzzword for this: "Agent Memory." LangChain is building OpenWiki Brains, OriginTrail is building shared memory systems for agents, and nearly every AI company claims it has "solved the memory problem." But look closer and you will find that most of these solutions are solving the wrong problem.</p>
+<p>01 The Misnamed Problem</p>
+<p>Imagine your brain is a refrigerator. The things you bring home from the supermarket (the information gained in a new conversation) do need somewhere to go. But <span class="del">what</span><span class="chg">the</span> <span class="del">decides</span><span class="chg">refrigerator's capacity does not decide</span> whether you can find that bag of shrimp when you cook <span class="del">tomorrow</span><span class="chg">tomorrow.</span> <span class="del">is</span><span class="chg">What</span> <span class="del">not</span><span class="chg">matters</span> <span class="del">the refrigerator's capacity. It</span><span class="chg">more</span> is which shelf you put it on, whether you labeled it, and where your eyes go first when you open the door.</p>
+<p>The name "Agent Memory" draws everyone's attention to "how to store it," but what really determines the outcome is whether, when answering a specific question, the system can send the right content to the <span class="del">LLM,</span><span class="chg">LLM</span> in the right form and <span class="del">the right </span>order.</p>
+<p>An R&amp;D team ran a systematic evaluation, comparing memory approaches from six major schools on the market. The result is somewhat counterintuitive.</p>
+<p>Under identical test conditions, the simplest approach (keep the raw conversation text and search it by keyword) scored higher than most carefully engineered systems. BM25, a text retrieval algorithm born decades ago, ranked consistently near the top across three rounds of evaluation.</p>
+<p>What does this mean? The approaches that invest heavily in "memory distillation" (using an LLM to compress conversations into fact cards, then storing them in a vector database) actually lose key details during compression. The tone and context of what the user said, along with their conditions and qualifiers, are gone after compression. When the information is needed, the retrieval system gets a pile of dry conclusions, stripped of their original warmth and precision.</p>
+<p>The evaluation data is clear. Approaches that keep the original text (MemMachine, 0.9169) significantly outperform the fact-extraction school (Mem0, about 0.68). A one-time LLM extraction is a clearly negative-ROI move.</p>
+<p>This conclusion has one important boundary condition. If, at read time, the agent decides for itself what to search <span class="del">for,</span><span class="chg">for and</span> how <span class="del">many</span><span class="chg">often</span> <span class="del">times</span><span class="chg">it</span> <span class="del">to</span><span class="chg">searches,</span> <span class="del">search, and</span><span class="chg">then</span> whether to use what it finds (similar to Letta's approach), the losses from compression can be recovered. But if the content is compressed and stored, waiting to be hit by passive retrieval, a miss is a miss.</p>
+<p>So the real question is not "how do we make AI remember more." The question is "how do we deliver the right information to the AI at the right moment." Storing is only the first step. Retrieval is what matters.</p>
+<p>02 Three Layers of Memory: From Forgetting to Knowing What to Remember</p>
+<p>Back to Naomi's story. Why did her AI assistant forget everything overnight? The technical reason is actually <span class="del">simple:</span><span class="chg">simple.</span> <span class="del">every</span><span class="chg">Every</span> time a new conversation (session) starts, the AI sees a blank page. The context of the previous conversation is gone, and no mechanism carries yesterday's key information into today.</p>
+<p>What does this resemble? A company with no handover process. Your colleague spent three hours with a client yesterday, and today you take over, but he left nothing behind. When the client calls, all you can say is, "Hello, may I ask who is calling?"</p>
+<p>The current approach solves this in three layers:</p>
+<p>Short-term memory — a summary of task status from the last 7 days, refreshed every hour. It answers "what have I been busy with lately?"</p>
+<p>Core memory — preferences and agreements that stay stable across conversations, injected unconditionally at the start of every conversation. It is "what you should know without my having to ask." For example, the user's preferred communication style, the team's tech stack, and a few hard lines that must never be crossed.</p>
+<p>Archival memory — vector retrieval over the full history of conversations, queried actively when needed. It is "everything we have discussed before."</p>
+<p>Why three layers instead of one big layer?</p>
+<p>Because the three layers correspond to three completely different moments of use. Short-term memory is a sticky note on your desk: you see it the moment you look up. <span class="del">Core</span><span class="chg">You carry core</span> memory <span class="del">is</span><span class="chg">everywhere,</span> <span class="del">your</span><span class="chg">like an</span> ID <span class="del">card: you carry it everywhere.</span><span class="chg">card.</span> Archival memory is the company filing cabinet: you open it only when you know what you are looking for.</p>
+<p>Schemes that put all memory into one layer do exist. In tests they also scored highest (in the LoCoMo evaluation, the generic-roster scheme ranked first with a 79% pass rate). But the cost is more than 10,000 tokens of context consumed in every conversation. For free <span class="del">users,</span><span class="chg">users and</span> lightweight conversations, and <span class="del">scenarios</span><span class="chg">wherever</span> <span class="del">that need</span><span class="chg">a</span> fast <span class="del">responses,</span><span class="chg">response is needed,</span> that cost is completely unacceptable.</p>
+<p>Core memory is the most subtle layer in the entire design. Existing benchmarks all test "the user asks a question, and can the system find the answer in its history?" Core memory solves a different <span class="del">problem:</span><span class="chg">problem, the question</span> "What should the agent know even when the user asks nothing?" No existing evaluation can measure this dimension.</p>
+<p>Naomi's expectations were actually <span class="del">simple:</span><span class="chg">simple.</span> I told you my monthly income target is ¥400,000–500,000 (it must be hit). I was burned by a previous AI, so I have zero tolerance for forgetting. I do not want you to post on social media automatically. I should not have to say these things every time. You should just remember them.</p>
+<p>If these three points had been automatically injected when she opened a new conversation the next day, her trust would not have collapsed.</p>
+<p>03 Organizational Memory: Not Just an Individual Agent's Business</p>
+<p>So far we have discussed the memory of a single agent. But in a team setting, the problem escalates by one dimension.</p>
+<p>A PM spent two weeks discussing product direction with an AI, forming a series of judgments and decisions. Some of these judgments have been signed <span class="del">off;</span><span class="chg">off.</span> <span class="del">others</span><span class="chg">Others</span> are still just personal thinking. A new R&amp;D colleague asks the AI: "Why are we building this feature this way?" Which version should the AI cite?</p>
+<p>If it cites a draft still under discussion and presents it to R&amp;D as settled, what happens? Misleading. If it cites a consensus that has been signed off but does not say where it came from, and R&amp;D asks for the basis, the AI cannot explain. What happens then? Distrust.</p>
+<p>This is a deeper <span class="del">problem:</span><span class="chg">problem.</span> <span class="del">a</span><span class="chg">A</span> team's knowledge also needs "memory levels."</p>
+<p>Internally, we sorted every file in the team space into four tiers by credibility:</p>
+<p>- Raw materials — verbatim user interview quotes, data screenshots, original external articles. First-hand facts, not changed or deleted; when an agent cites them, it may only restate them as facts, not interpret them.
+- Analysis inputs (compiled) — analysis, research, and thinking based on raw materials. Grounded, but not yet signed off. When an agent cites them, it must state that "this is someone's analysis from a given date, not team consensus."
+- Team consensus (canon) — decisions confirmed through a formal sign-off process. An agent can cite them directly as "current truth" without any prefix.
+- Work in progress (workspace) — PRD drafts, meeting notes, RFCs. They will "graduate" (ship, get finalized, get archived), but until then, the agent must mark them as "in flux, not finalized."</p>
+<p>Why do this? Because an agent is not like a person. A person reading a draft naturally knows "this isn't settled yet," but an AI reads text and treats it as fact. Back to Naomi's story: her AI read a draft of the weekly meeting prep, cited the numbers in it as confirmed analysis conclusions, and the user immediately identified it as a "hallucination."</p>
+<p>Encoding credibility directly into the directory location means an agent knows whether it can treat a file as truth just by seeing which tier it sits in. This is admittedly a crude method. But while AI cannot yet judge the reliability of information on its own, a crude method is the only reliable one.</p>
+<p>This tiering and the three layers of personal memory follow the same idea. <span class="del">It</span><span class="chg">Beyond</span> <span class="del">is</span><span class="chg">how</span> <span class="del">not</span><span class="chg">much</span> <span class="del">about</span><span class="chg">to</span> <span class="del">storing more;</span><span class="chg">store,</span> it is<span class="ins"> also</span> about separating things clearly. Separate timeliness (short-term vs. long-term), certainty (core memory vs. history awaiting retrieval), and credibility (signed-off consensus vs. personal analysis).</p>
+<p>04 Problems Still Unsolved</p>
+<p>Having said all this, there are several things we must candidly admit we have not solved well.</p>
+<p>Timing of session closure. When a conversation ends, key information should automatically be distilled and written into long-term memory. But "the conversation has ended" is itself a vague concept. Users may come back at any time. Trigger too early and information is <span class="del">lost;</span><span class="chg">lost.</span> <span class="del">trigger</span><span class="chg">Trigger</span> too late and it is as if it never triggered.</p>
+<p>Write standards for core memory. What counts as a "stable preference"? If the user says "I like concise answers" once, does that count? Three times? What if she changes her mind next week? Implicit preferences (every time she gets a long answer, she says "shorter") are harder to catch, because there is no explicit statement for vector retrieval to hit.</p>
+<p>The eternal tension between write cost and retrieval quality. The evaluation data reveals an industry-wide <span class="del">pattern:</span><span class="chg">pattern.</span> <span class="del">the</span><span class="chg">The</span> more rigorous the write process (multiple LLM analyses, building knowledge graphs), the more likely it is to collapse as the data grows. Four complex schemes all failed outright in long-conversation tests because writes timed out. There is no approach that delivers cheap writes, rigorous updates, and zero LLM cost at retrieval all at once.</p>
+<p>Memory sharing across agents. A team has multiple AI roles. The customer-service agent knows the user got angry. Does the product agent need to know? How much should be shared? Today, there is no good answer to this question.</p>
+<p>Finally</p>
+<p>Memory is the least glamorous infrastructure in agent products. No one posts on social media that "your AI remembered what I said last week." But it determines something <span class="del">fundamental:</span><span class="chg">fundamental, namely</span> whether trust can truly accumulate between AI and people.</p>
+<p>The Japanese musician's last words, "nothing accumulates," are an indictment of the entire agent industry. If AI has no reliable memory, it can only be a stranger who has to reintroduce itself every time you meet. No matter how strong its reasoning or how fast its tool calls, trust simply cannot build up.</p>
+<p>The industry is shifting from "what agents can do" to "what agents can remember." This shift has none of the excitement of a GPT-5 launch, but it may shape the actual product experience more than any model update.
+</p>
+</body></html>

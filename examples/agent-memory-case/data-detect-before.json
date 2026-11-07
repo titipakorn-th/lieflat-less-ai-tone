@@ -1,153 +1,147 @@
 {
  "meta": {
   "docs": 1,
-  "han_10k": 0.26,
+  "words": 1829,
   "paragraphs": 46,
   "headings": 0
  },
  "density": {
-  "Contrast reversal": 0.763,
-  "Cue-phrase colon": 1.145,
+  "Contrast reversal": 1.64,
+  "Cue-phrase colon": 2.734,
   "Opening formula": 0.0,
-  "当…时 clause": 0.0,
   "Topic-shell frame": 0.0,
   "Sentence-initial connective": 0.0,
-  "Enumeration comma list ≥3": 3.817,
-  "Long pre-modifier": 0.382,
+  "Serial list ≥3": 4.921,
   "Personifying metaphor": 0.0,
   "Vague summary (rejected)": 0.0,
   "Ordinal subheading (rejected)": 0.0,
-  "\"This means\" restatement (rejected)": 0.382,
-  "Empty lead-in to list (rejected)": 0.763
+  "\"This means\" restatement (rejected)": 0.0,
+  "Empty lead-in to list (rejected)": 1.093
  },
  "char_density": {
-  "Em dash": 3.053,
-  "Semicolon": 0.763,
-  "Quotation marks": 0.0
+  "Em dash": 3.827,
+  "Semicolon": 2.187,
+  "Quotation marks": 16.949
  },
  "hits": {
   "Contrast reversal": [
    {
-    "file": "article.md",
+    "file": "00-original.md",
     "line": 13,
-    "excerpt": "不是冰箱的容量，而是"
+    "excerpt": "is not the refrigerator's capacity. It is"
    },
    {
-    "file": "article.md",
+    "file": "00-original.md",
+    "line": 72,
+    "excerpt": "isn't settled yet,\" but"
+   },
+   {
+    "file": "00-original.md",
     "line": 76,
-    "excerpt": "不是存更多，而是"
+    "excerpt": "not about storing more; it is"
    }
   ],
   "Cue-phrase colon": [
    {
-    "file": "article.md",
-    "line": 1,
-    "excerpt": "问题："
+    "file": "00-original.md",
+    "line": 7,
+    "excerpt": "the same awkward fact:"
    },
    {
-    "file": "article.md",
+    "file": "00-original.md",
+    "line": 31,
+    "excerpt": "The technical reason is actually simple:"
+   },
+   {
+    "file": "00-original.md",
     "line": 49,
-    "excerpt": "问题："
+    "excerpt": "a different problem:"
    },
    {
-    "file": "article.md",
+    "file": "00-original.md",
     "line": 63,
-    "excerpt": "问题："
+    "excerpt": "a deeper problem:"
+   },
+   {
+    "file": "00-original.md",
+    "line": 86,
+    "excerpt": "an industry-wide pattern:"
    }
   ],
   "Opening formula": [],
-  "当…时 clause": [],
   "Topic-shell frame": [],
   "Sentence-initial connective": [],
-  "Enumeration comma list ≥3": [
+  "Serial list ≥3": [
    {
-    "file": "article.md",
+    "file": "00-original.md",
     "line": 13,
-    "excerpt": "而是你把它放在了哪层、贴没贴标签、以及你打开冰箱门时眼睛先看哪"
+    "excerpt": "you put it on, whether you labeled it, and where your eyes go"
    },
    {
-    "file": "article.md",
-    "line": 15,
-    "excerpt": "能不能把对的内容、以对的形式、以对的顺序送进 LLM\""
-   },
-   {
-    "file": "article.md",
-    "line": 21,
-    "excerpt": "用户说过的语气、上下文、条件限定"
-   },
-   {
-    "file": "article.md",
+    "file": "00-original.md",
     "line": 25,
-    "excerpt": " Agent 自己决定搜什么、搜几次、用不用搜到的内容（类似 Le"
+    "excerpt": "If, at read time, the agent decides for"
    },
    {
-    "file": "article.md",
+    "file": "00-original.md",
     "line": 39,
-    "excerpt": "比如用户的沟通风格偏好、团队的技术栈、几个绝对不能碰的红线"
+    "excerpt": "user's preferred communication style, the team's tech stack, and a few hard lines"
    },
    {
-    "file": "article.md",
+    "file": "00-original.md",
     "line": 47,
-    "excerpt": "对于免费用户、轻量对话、快速响应场景"
+    "excerpt": "For free users, lightweight conversations, and scenarios that need fast"
    },
    {
-    "file": "article.md",
+    "file": "00-original.md",
     "line": 67,
-    "excerpt": "料（raw）——用户访谈原话、数据截图、外部文章原文"
+    "excerpt": "verbatim user interview quotes, data screenshots, original external articles"
    },
    {
-    "file": "article.md",
+    "file": "00-original.md",
     "line": 68,
-    "excerpt": "ed）——基于原始材料的分析、调研、思考"
+    "excerpt": "analysis, research, and thinking based on raw"
    },
    {
-    "file": "article.md",
+    "file": "00-original.md",
     "line": 70,
-    "excerpt": "space）——PRD 草稿、会议记录、RFC"
+    "excerpt": "PRD drafts, meeting notes, RFCs"
    },
    {
-    "file": "article.md",
+    "file": "00-original.md",
     "line": 70,
-    "excerpt": "它们会\"毕业\"（上线、定稿、归档）"
-   }
-  ],
-  "Long pre-modifier": [
+    "excerpt": "ship, get finalized, get archived"
+   },
    {
-    "file": "article.md",
-    "line": 3,
-    "excerpt": "一个日本音乐人花了 10 小时向 AI 倾诉她的全部计划"
+    "file": "00-original.md",
+    "line": 86,
+    "excerpt": "that delivers cheap writes, rigorous updates, and zero LLM cost at"
    }
   ],
   "Personifying metaphor": [],
   "Vague summary (rejected)": [],
   "Ordinal subheading (rejected)": [],
-  "\"This means\" restatement (rejected)": [
-   {
-    "file": "article.md",
-    "line": 21,
-    "excerpt": "这意味着"
-   }
-  ],
+  "\"This means\" restatement (rejected)": [],
   "Empty lead-in to list (rejected)": [
    {
-    "file": "article.md",
+    "file": "00-original.md",
     "line": 35,
-    "excerpt": "现在的做法是分三层来解决："
+    "excerpt": "The current approach solves this in three layers:"
    },
    {
-    "file": "article.md",
+    "file": "00-original.md",
     "line": 65,
-    "excerpt": "在内部把团队空间里的所有文件按可信度分了四层："
+    "excerpt": " every file in the team space into four tiers by credibility:"
    }
   ]
  },
  "syn_hits": [],
  "structure": {
-  "Sentence-length CV": 0.559,
+  "Sentence-length CV": 0.662,
   "Section-length CV": null,
-  "Headings per 1k chars": 0.0,
-  "Isomorphic pairs per 100 paras": 8.7,
-  "Isomorphic triples per 100 paras": 2.17,
-  "MTLD (rough)": 1377
+  "Headings per 1k words": 0.0,
+  "Isomorphic pairs per 100 paras": 4.35,
+  "Isomorphic triples per 100 paras": 0.0,
+  "MTLD (rough)": 133
  }
 }

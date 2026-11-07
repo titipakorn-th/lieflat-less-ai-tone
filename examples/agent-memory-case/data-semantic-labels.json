@@ -1,852 +1,794 @@
 {
-  "meta": {
-    "n_candidates": 85,
-    "n_rename": 33,
-    "n_cohesion": 36,
-    "n_colon": 15,
-    "n_iso3": 1,
-    "truncated": false
+ "meta": {
+  "n_candidates": 79,
+  "n_rename": 29,
+  "n_cohesion": 34,
+  "n_colon": 16,
+  "n_iso3": 0,
+  "truncated": false
+ },
+ "rename": [
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 3,
+   "para": "A Japanese musician spent 10 hours pouring out all of her plans to an AI, and paid $30 for the service the next day. Nine minutes after paying, she discovered the AI had forgotten everything.",
+   "label": "0 groups",
+   "confidence": "high",
+   "reason": "Only the musician and the AI appear, and neither is given a second name."
   },
-  "rename": [
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 3,
-      "para": "一个日本音乐人花了 10 小时向 AI 倾诉她的全部计划，第二天付了 30 美元。付费后 9 分钟，她发现 AI 把一切都忘了。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 7,
-      "para": "这不是个案。几乎所有做 Agent 产品的团队，都在面对同一个尴尬事实：用户把 AI 当伙伴来信任，但 AI 的记忆力连一条金鱼都不如。金鱼好歹没有给用户许诺过\"我会记住\"。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 9,
-      "para": "行业里有个热闹的话题叫\"Agent Memory\"。LangChain 在做 OpenWiki Brains，OriginTrail 在做 agent 共享记忆系统，几乎每家 AI 公司都声称自己\"解决了记忆问题\"。但仔细看会发现，大多数方案在解决的其实是一个错误的问题。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 13,
-      "para": "把冰箱想象成你的大脑。你从超市买回来的东西（新对话里获得的信息），确实需要一个地方放。但真正决定你明天做饭时能不能找到那包虾仁的，不是冰箱的容量，而是你把它放在了哪层、贴没贴标签、以及你打开冰箱门时眼睛先看哪里。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 15,
-      "para": "\"Agent Memory\"这个名字把所有人的注意力引向了\"怎么存\"，但真正决定效果的是\"在回答某个具体问题时，能不能把对的内容、以对的形式、以对的顺序送进 LLM\"。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 17,
-      "para": "研发团队做了一轮系统评测，对比了市面上六大流派的记忆方案。结论有点反直觉。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 19,
-      "para": "在相同的测试条件下，最简单的做法（保留原始对话文本 + 用关键词搜索）跑出来的分数，比绝大多数精心设计的复杂工程都高。BM25，一个诞生于上世纪的文本检索算法，在三轮评测里稳居前列。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 21,
-      "para": "这意味着什么？那些花大力气做\"记忆提炼\"的方案（用 LLM 把对话压缩成事实卡片、再存进向量数据库），其实在压缩的过程中把关键细节丢掉了。用户说过的语气、上下文、条件限定，压缩完全没了。等到需要调用的时候，检索系统拿到的是一堆干巴巴的结论，失去了原来的温度和精确性。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 23,
-      "para": "评测数据很清楚：保留原文的方案（MemMachine 得分 0.9169）显著高于事实提取流派（Mem0 约 0.68）。一次性的 LLM 抽取，是明确的负 ROI 动作。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 25,
-      "para": "这条结论还有一个重要的边界条件。如果在\"读\"的阶段让 Agent 自己决定搜什么、搜几次、用不用搜到的内容（类似 Letta 的做法），那压缩造成的损失可以被补回来。但如果压缩完就存着、等被动检索来命中，错过就是错过了。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 27,
-      "para": "所以问题其实不是\"怎么让 AI 记住更多\"。问题是\"怎么在对的时刻把对的信息递到 AI 手里\"。存只是第一步，取才是关键。",
-      "label": "1 group",
-      "confidence": "high",
-      "reason": "“把对的信息递到 AI 手里” (get the right information to the AI) and “取” (retrieve) denote the same retrieval action, worded differently."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 31,
-      "para": "回到那位日本音乐人 Naomi 的故事。她的 AI 助手为什么会在一夜之间忘掉所有？技术层面的原因其实不复杂：每次开新对话（Session）时，AI 看到的是一张白纸。上一次对话的上下文消失了，没有任何机制把昨天聊过的关键信息传递到今天。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 33,
-      "para": "这像什么呢？像一个公司里没有交接制度。你的同事昨天跟客户聊了三小时，今天轮到你接班，但他什么都没留下。客户打来电话，你只能说\"您好，请问您是哪位？\"",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 37,
-      "para": "短期记忆（Short-term Memory）——最近 7 天的任务状态摘要，每小时刷新一次。它回答的是\"最近在忙什么\"。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 39,
-      "para": "核心记忆（Core Memory）——跨对话都稳定适用的偏好和约定，每次对话开始时无条件注入。它是\"我不问你也应该知道的事\"。比如用户的沟通风格偏好、团队的技术栈、几个绝对不能碰的红线。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 41,
-      "para": "档案记忆（Archival Memory）——全历史对话的向量检索，需要时主动查询。它是\"我们之前讨论过的所有事\"。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 45,
-      "para": "因为三层对应的是三种完全不同的调用时机。短期记忆像工位上的便利贴，抬头就看见；核心记忆像你的身份证，走到哪里都带着；档案记忆像公司的文件柜，知道要找什么的时候才去翻。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 47,
-      "para": "把所有记忆都放一层的方案确实存在。测试里它的分数也确实最高（LoCoMo 评测中 generic-roster 方案以 79% 的 pass rate 排第一）。但代价是每次对话要消耗一万多 token 的上下文。对于免费用户、轻量对话、快速响应场景，这个成本完全不可接受。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 49,
-      "para": "核心记忆（Core Memory）是整套设计里最微妙的一层。现有的 benchmark 全部在测\"用户问了一个问题，系统能不能从历史里找到答案\"。但核心记忆解决的是完全不同的一个问题：\"用户什么都没问，Agent 也应该知道什么。\"这个维度在任何现有评测里都无法被测到。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 51,
-      "para": "Naomi 的期望其实很简单：我告诉过你我的月收入目标是 40-50 万日元（\"必达\"），我被之前的 AI 伤过所以对\"忘事\"零容忍，我不要你自动去发社交媒体帖子。这些事不需要我每次都说，你应该记着。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 57,
-      "para": "到目前为止我们讨论的都是单个 Agent 的记忆。但在一个团队协作的场景里，问题会升级一个维度。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 59,
-      "para": "一个 PM 和 AI 讨论了两周的产品方向，形成了一系列判断和决策。这些判断有的已经拍板确认了，有的还只是个人思考。新加入的研发同事问 AI：\"这个功能为什么要这么做？\"AI 应该引用哪个版本？",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 61,
-      "para": "如果它引用了一段还在讨论中的草稿，当成定论告诉研发，后果是什么？误导。如果它引用了一段已经拍板的共识但没标明来源，研发追问的时候 AI 说不出依据是什么，后果是什么？不信任。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 72,
-      "para": "为什么要这么做？因为 Agent 不像人，人读一份草稿的时候自然知道\"这还没定\"，但 AI 读到文字就会当成事实去用。回到 Naomi 的故事：她的 AI 读到一份周会准备草稿，把上面的数字当成已确认的分析结论来引用，结果被用户当场识别为\"幻觉\"。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 74,
-      "para": "把可信度直接编码进目录位置，Agent 看到文件在哪一层就知道能不能当真相引用。这确实是一种笨办法。但在 AI 还不能自己判断信息可靠性的今天，笨办法是唯一可靠的办法。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 76,
-      "para": "这套分层和个人记忆的三层其实是同一种思路：不是存更多，而是分清楚。分清楚时效（短期 vs 长期），分清楚确定性（核心记忆 vs 待检索的历史），分清楚可信度（拍板的共识 vs 个人的分析）。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 82,
-      "para": "Session 闭环的时机。对话结束时应该自动提炼出关键信息写入长期记忆。但\"对话结束\"本身是个模糊概念。用户可能随时回来。触发太早丢信息，触发太晚等于没触发。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 84,
-      "para": "核心记忆的写入标准。什么算\"稳定偏好\"？用户说了一次\"我喜欢简洁\"算不算？说了三次才算？如果她下周改主意了呢？隐式偏好（每次收到长回答都会说\"短一点\"）更难捕捉——没有明确的陈述可以被向量检索命中。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 86,
-      "para": "写入成本与检索效果的永恒矛盾。评测数据揭示了一条行业级规律：写入越严谨（多次 LLM 分析、构建知识图谱）的方案，在数据量大的时候越容易崩溃。四个复杂方案在长对话测试中全部因为写入超时而直接失败。没有\"写入便宜 + 更新严谨 + 检索零 LLM 消耗\"三全其美的方案。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 88,
-      "para": "跨 Agent 的记忆共享。一个团队里有多个 AI 角色。负责客服的 Agent 知道用户发过脾气，负责产品的 Agent 需不需要知道？该共享多少？这个问题今天没有好的答案。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 92,
-      "para": "记忆是 Agent 产品里最不性感的基础设施。没有人会因为\"你的 AI 记住了我上周说的话\"而发一条朋友圈。但它决定了一个根本性的东西：AI 和人之间能不能真正积累信任。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 94,
-      "para": "那位日本音乐人最后说的\"什么都积累不起来\"，其实是对整个 Agent 行业的拷问。如果 AI 没有可靠的记忆，它就只能是一个每次见面都要重新介绍自己的陌生人。不管它的推理能力多强、工具调用多快，信任就是攒不起来。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    },
-    {
-      "type": "rename",
-      "file": "article.md",
-      "line": 96,
-      "para": "行业正在从\"Agent 能做什么\"转向\"Agent 能记住什么\"。这个转变没有 GPT-5 发布那么热闹，但它可能比任何一次模型更新都更决定产品的实际体验。",
-      "label": "0 groups",
-      "confidence": "high",
-      "reason": "Different expressions within the paragraph refer to different content, or are only pronouns, metaphors or ordinary anaphora; no same-concept synonym link is needed."
-    }
-  ],
-  "cohesion": [
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 5,
-      "prev_tail": "付费后 9 分钟，她发现 AI 把一切都忘了",
-      "next_head": "她留下的最后一句话是：\"結局何も積み重なっていかない",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "Same event: from amnesia straight to the person's feelings."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 7,
-      "prev_tail": "\"（最终什么都积累不起来",
-      "next_head": "这不是个案",
-      "label": "related but abrupt shift",
-      "confidence": "high",
-      "reason": "From a single case to an industry judgment; related, but the scope jumps abruptly."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 9,
-      "prev_tail": "金鱼好歹没有给用户许诺过\"我会记住\"",
-      "next_head": "行业里有个热闹的话题叫\"Agent Memory\"",
-      "label": "related but abrupt shift",
-      "confidence": "high",
-      "reason": "From user experience to industry solutions, with no bridging step."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 13,
-      "prev_tail": "但仔细看会发现，大多数方案在解决的其实是一个错误的问题",
-      "next_head": "把冰箱想象成你的大脑",
-      "label": "related but abrupt shift",
-      "confidence": "high",
-      "reason": "From problem diagnosis straight to the fridge analogy; abrupt shift."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 15,
-      "prev_tail": "但真正决定你明天做饭时能不能找到那包虾仁的，不是冰箱的容量，而是你把它放在了哪层、贴没贴标签、以及你打开冰箱门时眼睛先看哪里",
-      "next_head": "\"Agent Memory\"这个名字把所有人的注意力引向了\"怎么存\"，但真正决定效果的是\"在回答某个具体问题时，能不能把对的内容、以对的形式、以对的顺序送进 LLM\"",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "The fridge analogy's storing and retrieving connects directly to storing and retrieving in the memory system."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 17,
-      "prev_tail": "\"Agent Memory\"这个名字把所有人的注意力引向了\"怎么存\"，但真正决定效果的是\"在回答某个具体问题时，能不能把对的内容、以对的形式、以对的顺序送进 LLM\"",
-      "next_head": "研发团队做了一轮系统评测，对比了市面上六大流派的记忆方案",
-      "label": "related but abrupt shift",
-      "confidence": "high",
-      "reason": "From argument to evaluation source; related, but the subject of the narration changes."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 19,
-      "prev_tail": "结论有点反直觉",
-      "next_head": "在相同的测试条件下，最简单的做法（保留原始对话文本 + 用关键词搜索）跑出来的分数，比绝大多数精心设计的复杂工程都高",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "The “counterintuitive” finding is immediately explained by the simplest approach performing better."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 21,
-      "prev_tail": "BM25，一个诞生于上世纪的文本检索算法，在三轮评测里稳居前列",
-      "next_head": "这意味着什么",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "BM25's performance directly prompts an explanation of it."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 23,
-      "prev_tail": "等到需要调用的时候，检索系统拿到的是一堆干巴巴的结论，失去了原来的温度和精确性",
-      "next_head": "评测数据很清楚：保留原文的方案（MemMachine 得分 0.9169）显著高于事实提取流派（Mem0 约 0.68）",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "The original-text retention scores follow on from the compression loss in the previous paragraph."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 25,
-      "prev_tail": "一次性的 LLM 抽取，是明确的负 ROI 动作",
-      "next_head": "这条结论还有一个重要的边界条件",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "Adds a boundary condition directly to the previous conclusion."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 27,
-      "prev_tail": "但如果压缩完就存着、等被动检索来命中，错过就是错过了",
-      "next_head": "所以问题其实不是\"怎么让 AI 记住更多\"",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "The difference between active retrieval and passive matching is summarized as a retrieval problem."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 31,
-      "prev_tail": "存只是第一步，取才是关键",
-      "next_head": "回到那位日本音乐人 Naomi 的故事",
-      "label": "related but abrupt shift",
-      "confidence": "high",
-      "reason": "From the technical argument back to the opening figure; related, but the shift is abrupt."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 33,
-      "prev_tail": "上一次对话的上下文消失了，没有任何机制把昨天聊过的关键信息传递到今天",
-      "next_head": "这像什么呢",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "The handover analogy follows the previous sentence's cross-session information loss."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 37,
-      "prev_tail": "客户打来电话，你只能说\"您好，请问您是哪位",
-      "next_head": "短期记忆（Short-term Memory）——最近 7 天的任务状态摘要，每小时刷新一次",
-      "label": "related but abrupt shift",
-      "confidence": "high",
-      "reason": "From the handover analogy straight into the three-layer definitions; related, but a middle step is missing."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 39,
-      "prev_tail": "它回答的是\"最近在忙什么\"",
-      "next_head": "核心记忆（Core Memory）——跨对话都稳定适用的偏好和约定，每次对话开始时无条件注入",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "From the short-term memory definition to another layer's definition; same list."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 41,
-      "prev_tail": "比如用户的沟通风格偏好、团队的技术栈、几个绝对不能碰的红线",
-      "next_head": "档案记忆（Archival Memory）——全历史对话的向量检索，需要时主动查询",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "From the core memory definition to the archival memory definition; same list."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 45,
-      "prev_tail": "它是\"我们之前讨论过的所有事\"",
-      "next_head": "因为三层对应的是三种完全不同的调用时机",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "The three-layer definitions lead directly to each layer's recall timing."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 47,
-      "prev_tail": "档案记忆像公司的文件柜，知道要找什么的时候才去翻",
-      "next_head": "把所有记忆都放一层的方案确实存在",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "After the filing-cabinet analogy, discusses the alternative of keeping all memory in one layer."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 49,
-      "prev_tail": "对于免费用户、轻量对话、快速响应场景，这个成本完全不可接受",
-      "next_head": "核心记忆（Core Memory）是整套设计里最微妙的一层",
-      "label": "related but abrupt shift",
-      "confidence": "high",
-      "reason": "From the cost of uniform storage to the core-memory evaluation gap; related, but the shift is abrupt."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 51,
-      "prev_tail": "\"这个维度在任何现有评测里都无法被测到",
-      "next_head": "Naomi 的期望其实很简单：我告诉过你我的月收入目标是 40-50 万日元（\"必达\"），我被之前的 AI 伤过所以对\"忘事\"零容忍，我不要你自动去发社交媒体帖子",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "The core-memory evaluation gap leads to Naomi's specific expectations."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 53,
-      "prev_tail": "这些事不需要我每次都说，你应该记着",
-      "next_head": "如果这三条在她第二天开新对话时被自动注入，信任就不会崩塌",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "The three expectations lead directly to the result if they were auto-injected."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 57,
-      "prev_tail": "如果这三条在她第二天开新对话时被自动注入，信任就不会崩塌",
-      "next_head": "到目前为止我们讨论的都是单个 Agent 的记忆",
-      "label": "related but abrupt shift",
-      "confidence": "high",
-      "reason": "From personal memory to organizational memory; topic related, but crosses levels."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 59,
-      "prev_tail": "但在一个团队协作的场景里，问题会升级一个维度",
-      "next_head": "一个 PM 和 AI 讨论了两周的产品方向，形成了一系列判断和决策",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "The team-scenario judgment is developed directly from the PM case."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 61,
-      "prev_tail": "\"AI 应该引用哪个版本",
-      "next_head": "如果它引用了一段还在讨论中的草稿，当成定论告诉研发，后果是什么",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "“该引用哪个版本” (which version to cite) follows directly from the two citation errors."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 63,
-      "prev_tail": "如果它引用了一段已经拍板的共识但没标明来源，研发追问的时候 AI 说不出依据是什么，后果是什么",
-      "next_head": "这是一个更底层的问题：团队的知识也需要\"记忆层级\"",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "The risk of citing drafts versus consensus is summarized as a team knowledge-tier problem."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 65,
-      "prev_tail": "这是一个更底层的问题：团队的知识也需要\"记忆层级\"",
-      "next_head": "在内部把团队空间里的所有文件按可信度分了四层：",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "The team knowledge-tier problem leads directly into the four-level file classification."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 72,
-      "prev_tail": "在内部把团队空间里的所有文件按可信度分了四层：",
-      "next_head": "为什么要这么做",
-      "label": "related but abrupt shift",
-      "confidence": "high",
-      "reason": "From the list lead-in to “为什么” (why), skipping the list contents; candidate link incomplete."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 74,
-      "prev_tail": "回到 Naomi 的故事：她的 AI 读到一份周会准备草稿，把上面的数字当成已确认的分析结论来引用，结果被用户当场识别为\"幻觉\"",
-      "next_head": "把可信度直接编码进目录位置，Agent 看到文件在哪一层就知道能不能当真相引用",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "After the wrongly cited weekly-meeting draft, directly introduces how directory credibility is handled."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 76,
-      "prev_tail": "但在 AI 还不能自己判断信息可靠性的今天，笨办法是唯一可靠的办法",
-      "next_head": "这套分层和个人记忆的三层其实是同一种思路：不是存更多，而是分清楚",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "The directory-tier approach leads directly to its relation to the personal memory layers."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 82,
-      "prev_tail": "分清楚时效（短期 vs 长期），分清楚确定性（核心记忆 vs 待检索的历史），分清楚可信度（拍板的共识 vs 个人的分析）",
-      "next_head": "Session 闭环的时机",
-      "label": "related but abrupt shift",
-      "confidence": "high",
-      "reason": "From the layering principle to Session timing; related, but a different point."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 84,
-      "prev_tail": "触发太早丢信息，触发太晚等于没触发",
-      "next_head": "核心记忆的写入标准",
-      "label": "related but abrupt shift",
-      "confidence": "high",
-      "reason": "From loop-closing timing to write criteria; next item in the open-problems list."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 86,
-      "prev_tail": "隐式偏好（每次收到长回答都会说\"短一点\"）更难捕捉——没有明确的陈述可以被向量检索命中",
-      "next_head": "写入成本与检索效果的永恒矛盾",
-      "label": "related but abrupt shift",
-      "confidence": "high",
-      "reason": "From implicit preferences to cost and effect; next item in the open-problems list."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 88,
-      "prev_tail": "没有\"写入便宜 + 更新严谨 + 检索零 LLM 消耗\"三全其美的方案",
-      "next_head": "跨 Agent 的记忆共享",
-      "label": "related but abrupt shift",
-      "confidence": "high",
-      "reason": "From write cost to cross-agent sharing; next item in the open-problems list."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 92,
-      "prev_tail": "这个问题今天没有好的答案",
-      "next_head": "记忆是 Agent 产品里最不性感的基础设施",
-      "label": "related but abrupt shift",
-      "confidence": "high",
-      "reason": "From unsolved problems to the summary; the paragraph's function changes."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 94,
-      "prev_tail": "但它决定了一个根本性的东西：AI 和人之间能不能真正积累信任",
-      "next_head": "那位日本音乐人最后说的\"什么都积累不起来\"，其实是对整个 Agent 行业的拷问",
-      "label": "explicit carry-over",
-      "confidence": "high",
-      "reason": "The trust problem leads directly to the assessment of the opening figure."
-    },
-    {
-      "type": "cohesion",
-      "file": "article.md",
-      "line": 96,
-      "prev_tail": "不管它的推理能力多强、工具调用多快，信任就是攒不起来",
-      "next_head": "行业正在从\"Agent 能做什么\"转向\"Agent 能记住什么\"",
-      "label": "related but abrupt shift",
-      "confidence": "high",
-      "reason": "From personal trust to industry trend; related, but a level shift."
-    }
-  ],
-  "colon": [
-    {
-      "type": "colon",
-      "file": "article.md",
-      "line": 1,
-      "colon_before": "Agent 的记忆问题",
-      "colon_after": "为什么你的 AI 助手总在失忆",
-      "sentence": "Agent 的记忆问题：为什么你的 AI 助手总在失忆",
-      "label": "heading/time/ratio metadata or layout",
-      "confidence": "high",
-      "reason": "Main/subtitle split in the article title."
-    },
-    {
-      "type": "colon",
-      "file": "article.md",
-      "line": 5,
-      "colon_before": "她留下的最后一句话是",
-      "colon_after": "\"結局何も積み重なっていかない。\"（最终什么都积累不起来。）",
-      "sentence": "她留下的最后一句话是：\"結局何も積み重なっていかない。\"（最终什么都积累不起来。）",
-      "label": "quotation or speech",
-      "confidence": "high",
-      "reason": "“她留下的最后一句话是” (her last words were) introduces the person's own words."
-    },
-    {
-      "type": "colon",
-      "file": "article.md",
-      "line": 7,
-      "colon_before": "都在面对同一个尴尬事实",
-      "colon_after": "用户把 AI 当伙伴来信任，但 AI 的记忆力连一条金鱼都不如。金鱼好歹没有给用户许诺过\"我会记住\"。",
-      "sentence": "这不是个案。几乎所有做 Agent 产品的团队，都在面对同一个尴尬事实：用户把 AI 当伙伴来信任，但 AI 的记忆力连一条金鱼都不如。金鱼好歹没有给用户许诺过\"我会记住\"。",
-      "label": "conclusion cue",
-      "confidence": "high",
-      "reason": "The colon follows a claim that the whole team faces the same awkward fact; that judgment is then expanded."
-    },
-    {
-      "type": "colon",
-      "file": "article.md",
-      "line": 23,
-      "colon_before": "评测数据很清楚",
-      "colon_after": "保留原文的方案（MemMachine 得分 0.9169）显著高于事实提取流派（Mem0 约 0.68）。一次性的 LL",
-      "sentence": "评测数据很清楚：保留原文的方案（MemMachine 得分 0.9169）显著高于事实提取流派（Mem0 约 0.68）。一次性的 LLM 抽取，是明确的负 ROI 动作。",
-      "label": "other body colon",
-      "confidence": "high",
-      "reason": "“评测数据很清楚” (the evaluation data is clear) is only a lead-in; it gives no independent conclusion."
-    },
-    {
-      "type": "colon",
-      "file": "article.md",
-      "line": 29,
-      "colon_before": "02 三层记忆",
-      "colon_after": "从\"失忆\"到\"知道该记什么\"",
-      "sentence": "02 三层记忆：从\"失忆\"到\"知道该记什么\"",
-      "label": "heading/time/ratio metadata or layout",
-      "confidence": "high",
-      "reason": "Main/subtitle split in the section heading."
-    },
-    {
-      "type": "colon",
-      "file": "article.md",
-      "line": 31,
-      "colon_before": "技术层面的原因其实不复杂",
-      "colon_after": "每次开新对话（Session）时，AI 看到的是一张白纸。上一次对话的上下文消失了，没有任何机制把昨天聊过的关键信息传递",
-      "sentence": "回到那位日本音乐人 Naomi 的故事。她的 AI 助手为什么会在一夜之间忘掉所有？技术层面的原因其实不复杂：每次开新对话（Session）时，AI 看到的是一张白纸。上一次对话的上下文消失了，没有任何机制把昨天聊过的关键信息传递到今天。",
-      "label": "conclusion cue",
-      "confidence": "high",
-      "reason": "Before the colon, claims the technical reason is simple; the reason is expanded after."
-    },
-    {
-      "type": "colon",
-      "file": "article.md",
-      "line": 49,
-      "colon_before": "但核心记忆解决的是完全不同的一个问题",
-      "colon_after": "\"用户什么都没问，Agent 也应该知道什么。\"这个维度在任何现有评测里都无法被测到。",
-      "sentence": "核心记忆（Core Memory）是整套设计里最微妙的一层。现有的 benchmark 全部在测\"用户问了一个问题，系统能不能从历史里找到答案\"。但核心记忆解决的是完全不同的一个问题：\"用户什么都没问，Agent 也应该知道什么。\"这个维度",
-      "label": "conclusion cue",
-      "confidence": "high",
-      "reason": "Before the colon, claims core memory solves a different problem; that problem is expanded after."
-    },
-    {
-      "type": "colon",
-      "file": "article.md",
-      "line": 51,
-      "colon_before": "Naomi 的期望其实很简单",
-      "colon_after": "我告诉过你我的月收入目标是 40-50 万日元（\"必达\"），我被之前的 AI 伤过所以对\"忘事\"零容忍，我不要你自动去发",
-      "sentence": "Naomi 的期望其实很简单：我告诉过你我的月收入目标是 40-50 万日元（\"必达\"），我被之前的 AI 伤过所以对\"忘事\"零容忍，我不要你自动去发社交媒体帖子。这些事不需要我每次都说，你应该记着。",
-      "label": "other body colon",
-      "confidence": "high",
-      "reason": "“期望很简单” (the expectations are simple) introduces specific expectations; the first clause states no independent conclusion."
-    },
-    {
-      "type": "colon",
-      "file": "article.md",
-      "line": 55,
-      "colon_before": "03 组织级的记忆",
-      "colon_after": "不只是 Agent 个人的事",
-      "sentence": "03 组织级的记忆：不只是 Agent 个人的事",
-      "label": "heading/time/ratio metadata or layout",
-      "confidence": "high",
-      "reason": "Main/subtitle split in the section heading."
-    },
-    {
-      "type": "colon",
-      "file": "article.md",
-      "line": 59,
-      "colon_before": "新加入的研发同事问 AI",
-      "colon_after": "\"这个功能为什么要这么做？\"AI 应该引用哪个版本？",
-      "sentence": "一个 PM 和 AI 讨论了两周的产品方向，形成了一系列判断和决策。这些判断有的已经拍板确认了，有的还只是个人思考。新加入的研发同事问 AI：\"这个功能为什么要这么做？\"AI 应该引用哪个版本？",
-      "label": "quotation or speech",
-      "confidence": "high",
-      "reason": "“研发同事问 AI” (a developer asks the AI) introduces a direct question."
-    },
-    {
-      "type": "colon",
-      "file": "article.md",
-      "line": 63,
-      "colon_before": "这是一个更底层的问题",
-      "colon_after": "团队的知识也需要\"记忆层级\"。",
-      "sentence": "这是一个更底层的问题：团队的知识也需要\"记忆层级\"。",
-      "label": "other body colon",
-      "confidence": "high",
-      "reason": "“更底层的问题” (a more fundamental problem) is an unspecified lead-in, not an independent conclusion."
-    },
-    {
-      "type": "colon",
-      "file": "article.md",
-      "line": 72,
-      "colon_before": "回到 Naomi 的故事",
-      "colon_after": "她的 AI 读到一份周会准备草稿，把上面的数字当成已确认的分析结论来引用，结果被用户当场识别为\"幻觉\"。",
-      "sentence": "为什么要这么做？因为 Agent 不像人，人读一份草稿的时候自然知道\"这还没定\"，但 AI 读到文字就会当成事实去用。回到 Naomi 的故事：她的 AI 读到一份周会准备草稿，把上面的数字当成已确认的分析结论来引用，结果被用户当场识别为\"",
-      "label": "other body colon",
-      "confidence": "high",
-      "reason": "“回到 Naomi 的故事” (back to Naomi's story) introduces an example, not a conclusion."
-    },
-    {
-      "type": "colon",
-      "file": "article.md",
-      "line": 76,
-      "colon_before": "这套分层和个人记忆的三层其实是同一种思路",
-      "colon_after": "不是存更多，而是分清楚。分清楚时效（短期 vs 长期），分清楚确定性（核心记忆 vs 待检索的历史），分清楚可信度（拍板",
-      "sentence": "这套分层和个人记忆的三层其实是同一种思路：不是存更多，而是分清楚。分清楚时效（短期 vs 长期），分清楚确定性（核心记忆 vs 待检索的历史），分清楚可信度（拍板的共识 vs 个人的分析）。",
-      "label": "conclusion cue",
-      "confidence": "high",
-      "reason": "Before the colon, claims organizational and personal layering share one idea; the colon explains the similarity."
-    },
-    {
-      "type": "colon",
-      "file": "article.md",
-      "line": 86,
-      "colon_before": "评测数据揭示了一条行业级规律",
-      "colon_after": "写入越严谨（多次 LLM 分析、构建知识图谱）的方案，在数据量大的时候越容易崩溃。四个复杂方案在长对话测试中全部因为写入",
-      "sentence": "写入成本与检索效果的永恒矛盾。评测数据揭示了一条行业级规律：写入越严谨（多次 LLM 分析、构建知识图谱）的方案，在数据量大的时候越容易崩溃。四个复杂方案在长对话测试中全部因为写入超时而直接失败。没有\"写入便宜 + 更新严谨 + 检索零 L",
-      "label": "other body colon",
-      "confidence": "high",
-      "reason": "“揭示了一条规律” (revealed a pattern) introduces the content of the pattern; it states no conclusion itself."
-    },
-    {
-      "type": "colon",
-      "file": "article.md",
-      "line": 92,
-      "colon_before": "但它决定了一个根本性的东西",
-      "colon_after": "AI 和人之间能不能真正积累信任。",
-      "sentence": "记忆是 Agent 产品里最不性感的基础设施。没有人会因为\"你的 AI 记住了我上周说的话\"而发一条朋友圈。但它决定了一个根本性的东西：AI 和人之间能不能真正积累信任。",
-      "label": "other body colon",
-      "confidence": "high",
-      "reason": "“根本性的东西” (something fundamental) introduces what it refers to; it states no conclusion itself."
-    }
-  ],
-  "iso3": [
-    {
-      "line": 45,
-      "sents": [
-        "短期记忆像工位上的便利贴，抬头就看见",
-        "核心记忆像你的身份证，走到哪里都带着",
-        "档案记忆像公司的文件柜，知道要找什么的时候才去翻"
-      ],
-      "file": "article.md",
-      "label": "highly isomorphic",
-      "confidence": "high",
-      "reason": "All three sentences take the form “a kind of memory is like an object, followed by how it is used”; subject, predicate and complement correspond item by item."
-    }
-  ]
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 7,
+   "para": "This is not an isolated case. Nearly every team building agent products faces the same awkward fact: users trust the AI as a partner, but its memory is worse than a goldfish's. At least a goldfish never promised the user \"I'll remember.\"",
+   "label": "0 groups",
+   "confidence": "high",
+   "reason": "The AI and the user are referred to consistently; no renaming occurs."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 9,
+   "para": "The industry has a buzzword for this: \"Agent Memory.\" LangChain is building OpenWiki Brains, OriginTrail is building shared memory systems for agents, and nearly every AI company claims it has \"solved the memory problem.\" But look closer and you will find that most of these solutions are solving the wrong problem.",
+   "label": "0 groups",
+   "confidence": "medium",
+   "reason": "'Agent Memory' and 'solutions' keep their wording; no substantive renaming."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 13,
+   "para": "Imagine your brain is a refrigerator. The things you bring home from the supermarket (the information gained in a new conversation) do need somewhere to go. But what decides whether you can find that bag of shrimp when you cook tomorrow is not the refrigerator's capacity. It is which shelf you put it on, whether you labeled it, and where your eyes go first when you open the door.",
+   "label": "0 groups",
+   "confidence": "medium",
+   "reason": "The refrigerator analogy maps groceries to information; this is a metaphor frame, not a renamed entity."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 15,
+   "para": "The name \"Agent Memory\" draws everyone's attention to \"how to store it,\" but what really determines the outcome is whether, when answering a specific question, the system can send the right content to the LLM, in the right form and the right order.",
+   "label": "0 groups",
+   "confidence": "medium",
+   "reason": "'Agent Memory' is named once and not given a second name in the paragraph."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 19,
+   "para": "Under identical test conditions, the simplest approach (keep the raw conversation text and search it by keyword) scored higher than most carefully engineered systems. BM25, a text retrieval algorithm born decades ago, ranked consistently near the top across three rounds of evaluation.",
+   "label": "0 groups",
+   "confidence": "medium",
+   "reason": "BM25 is introduced as an appositive explanation of the simplest approach, not as a second name."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 21,
+   "para": "What does this mean? The approaches that invest heavily in \"memory distillation\" (using an LLM to compress conversations into fact cards, then storing them in a vector database) actually lose key details during compression. The tone and context of what the user said, along with their conditions and qualifiers, are gone after compression. When the information is needed, the retrieval system gets a pile of dry conclusions, stripped of their original warmth and precision.",
+   "label": "1 group",
+   "confidence": "medium",
+   "reason": "'Fact cards' are later called 'a pile of dry conclusions', an X-is-Y renaming link."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 23,
+   "para": "The evaluation data is clear. Approaches that keep the original text (MemMachine, 0.9169) significantly outperform the fact-extraction school (Mem0, about 0.68). A one-time LLM extraction is a clearly negative-ROI move.",
+   "label": "1 group",
+   "confidence": "low",
+   "reason": "'The fact-extraction school' is later referred to as 'a one-time LLM extraction', a second name for the same approach."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 25,
+   "para": "This conclusion has one important boundary condition. If, at read time, the agent decides for itself what to search for, how many times to search, and whether to use what it finds (similar to Letta's approach), the losses from compression can be recovered. But if the content is compressed and stored, waiting to be hit by passive retrieval, a miss is a miss.",
+   "label": "0 groups",
+   "confidence": "medium",
+   "reason": "Entities keep consistent wording; 'the content' and 'the losses' are not renamed synonyms."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 27,
+   "para": "So the real question is not \"how do we make AI remember more.\" The question is \"how do we deliver the right information to the AI at the right moment.\" Storing is only the first step. Retrieval is what matters.",
+   "label": "0 groups",
+   "confidence": "high",
+   "reason": "Each concept keeps its wording within the paragraph."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 31,
+   "para": "Back to Naomi's story. Why did her AI assistant forget everything overnight? The technical reason is actually simple: every time a new conversation (session) starts, the AI sees a blank page. The context of the previous conversation is gone, and no mechanism carries yesterday's key information into today.",
+   "label": "0 groups",
+   "confidence": "high",
+   "reason": "The AI and the conversation are referred to consistently."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 33,
+   "para": "What does this resemble? A company with no handover process. Your colleague spent three hours with a client yesterday, and today you take over, but he left nothing behind. When the client calls, all you can say is, \"Hello, may I ask who is calling?\"",
+   "label": "0 groups",
+   "confidence": "medium",
+   "reason": "The analogy characters (colleague, client) are used consistently."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 39,
+   "para": "Core memory — preferences and agreements that stay stable across conversations, injected unconditionally at the start of every conversation. It is \"what you should know without my having to ask.\" For example, the user's preferred communication style, the team's tech stack, and a few hard lines that must never be crossed.",
+   "label": "0 groups",
+   "confidence": "low",
+   "reason": "'Preferences and agreements' is followed by a definition ('what you should know'), not a renamed entity."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 45,
+   "para": "Because the three layers correspond to three completely different moments of use. Short-term memory is a sticky note on your desk: you see it the moment you look up. Core memory is your ID card: you carry it everywhere. Archival memory is the company filing cabinet: you open it only when you know what you are looking for.",
+   "label": "0 groups",
+   "confidence": "high",
+   "reason": "Each metaphor maps to one layer; no entity is renamed."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 47,
+   "para": "Schemes that put all memory into one layer do exist. In tests they also scored highest (in the LoCoMo evaluation, the generic-roster scheme ranked first with a 79% pass rate). But the cost is more than 10,000 tokens of context consumed in every conversation. For free users, lightweight conversations, and scenarios that need fast responses, that cost is completely unacceptable.",
+   "label": "1 group",
+   "confidence": "medium",
+   "reason": "'Schemes that put all memory into one layer' is later identified as 'the generic-roster scheme', an X-is-Y renaming link."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 49,
+   "para": "Core memory is the most subtle layer in the entire design. Existing benchmarks all test \"the user asks a question, and can the system find the answer in its history?\" Core memory solves a different problem: \"What should the agent know even when the user asks nothing?\" No existing evaluation can measure this dimension.",
+   "label": "1 group",
+   "confidence": "medium",
+   "reason": "'Existing benchmarks' becomes 'existing evaluation', a renamed entity."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 51,
+   "para": "Naomi's expectations were actually simple: I told you my monthly income target is ¥400,000–500,000 (it must be hit). I was burned by a previous AI, so I have zero tolerance for forgetting. I do not want you to post on social media automatically. I should not have to say these things every time. You should just remember them.",
+   "label": "0 groups",
+   "confidence": "high",
+   "reason": "The user and her expectations are referred to consistently."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 59,
+   "para": "A PM spent two weeks discussing product direction with an AI, forming a series of judgments and decisions. Some of these judgments have been signed off; others are still just personal thinking. A new R&D colleague asks the AI: \"Why are we building this feature this way?\" Which version should the AI cite?",
+   "label": "0 groups",
+   "confidence": "medium",
+   "reason": "Judgments, decisions and the AI keep consistent wording."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 61,
+   "para": "If it cites a draft still under discussion and presents it to R&D as settled, what happens? Misleading. If it cites a consensus that has been signed off but does not say where it came from, and R&D asks for the basis, the AI cannot explain. What happens then? Distrust.",
+   "label": "0 groups",
+   "confidence": "medium",
+   "reason": "'Draft' and 'consensus' keep their wording; no renaming."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 72,
+   "para": "Why do this? Because an agent is not like a person. A person reading a draft naturally knows \"this isn't settled yet,\" but an AI reads text and treats it as fact. Back to Naomi's story: her AI read a draft of the weekly meeting prep, cited the numbers in it as confirmed analysis conclusions, and the user immediately identified it as a \"hallucination.\"",
+   "label": "0 groups",
+   "confidence": "high",
+   "reason": "'Draft' is reused consistently; no second name for the same entity."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 74,
+   "para": "Encoding credibility directly into the directory location means an agent knows whether it can treat a file as truth just by seeing which tier it sits in. This is admittedly a crude method. But while AI cannot yet judge the reliability of information on its own, a crude method is the only reliable one.",
+   "label": "0 groups",
+   "confidence": "medium",
+   "reason": "'Tier' and 'directory location' describe one mechanism without renaming an entity."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 76,
+   "para": "This tiering and the three layers of personal memory follow the same idea. It is not about storing more; it is about separating things clearly. Separate timeliness (short-term vs. long-term), certainty (core memory vs. history awaiting retrieval), and credibility (signed-off consensus vs. personal analysis).",
+   "label": "0 groups",
+   "confidence": "low",
+   "reason": "'Tiering' and 'the three layers' name two different systems; the paragraph does not rename one entity."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 82,
+   "para": "Timing of session closure. When a conversation ends, key information should automatically be distilled and written into long-term memory. But \"the conversation has ended\" is itself a vague concept. Users may come back at any time. Trigger too early and information is lost; trigger too late and it is as if it never triggered.",
+   "label": "0 groups",
+   "confidence": "medium",
+   "reason": "Session closure and the end of a conversation keep stable wording."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 84,
+   "para": "Write standards for core memory. What counts as a \"stable preference\"? If the user says \"I like concise answers\" once, does that count? Three times? What if she changes her mind next week? Implicit preferences (every time she gets a long answer, she says \"shorter\") are harder to catch, because there is no explicit statement for vector retrieval to hit.",
+   "label": "0 groups",
+   "confidence": "medium",
+   "reason": "'Stable preference' is used consistently; 'concise' and 'shorter' describe different instances."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 86,
+   "para": "The eternal tension between write cost and retrieval quality. The evaluation data reveals an industry-wide pattern: the more rigorous the write process (multiple LLM analyses, building knowledge graphs), the more likely it is to collapse as the data grows. Four complex schemes all failed outright in long-conversation tests because writes timed out. There is no approach that delivers cheap writes, rigorous updates, and zero LLM cost at retrieval all at once.",
+   "label": "0 groups",
+   "confidence": "medium",
+   "reason": "'Write process' and 'writes' refer to the same operation with stable wording."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 88,
+   "para": "Memory sharing across agents. A team has multiple AI roles. The customer-service agent knows the user got angry. Does the product agent need to know? How much should be shared? Today, there is no good answer to this question.",
+   "label": "1 group",
+   "confidence": "low",
+   "reason": "'Multiple AI roles' is later called 'agents', a second name for one set of entities."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 92,
+   "para": "Memory is the least glamorous infrastructure in agent products. No one posts on social media that \"your AI remembered what I said last week.\" But it determines something fundamental: whether trust can truly accumulate between AI and people.",
+   "label": "0 groups",
+   "confidence": "high",
+   "reason": "'Agent products' and 'your AI' are used without renaming a concept."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 94,
+   "para": "The Japanese musician's last words, \"nothing accumulates,\" are an indictment of the entire agent industry. If AI has no reliable memory, it can only be a stranger who has to reintroduce itself every time you meet. No matter how strong its reasoning or how fast its tool calls, trust simply cannot build up.",
+   "label": "0 groups",
+   "confidence": "medium",
+   "reason": "'Trust' and 'build up' restate the same idea; no entity is renamed."
+  },
+  {
+   "type": "rename",
+   "file": "00-original.md",
+   "line": 96,
+   "para": "The industry is shifting from \"what agents can do\" to \"what agents can remember.\" This shift has none of the excitement of a GPT-5 launch, but it may shape the actual product experience more than any model update.",
+   "label": "0 groups",
+   "confidence": "high",
+   "reason": "Agents and models are distinct entities referred to consistently."
+  }
+ ],
+ "cohesion": [
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 7,
+   "prev_tail": "Nine minutes after paying, she discovered the AI had forgotten everything.",
+   "next_head": "This is not an isolated case.",
+   "label": "explicit carry-over",
+   "confidence": "high",
+   "reason": "'This is not an isolated case' continues the musician's story."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 9,
+   "prev_tail": "At least a goldfish never promised the user \"I'll remember.\"",
+   "next_head": "The industry has a buzzword for this: \"Agent Memory.\" LangChain is building OpenWiki Brains, OriginTrail is building shared memory systems for agents, and nearly every AI company claims it has \"solved the memory problem.\" But look closer and you will find that most of these solutions are solving the wrong problem.",
+   "label": "explicit carry-over",
+   "confidence": "medium",
+   "reason": "'The industry has a buzzword for this' continues the discussion of the memory failure."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 13,
+   "prev_tail": "The industry has a buzzword for this: \"Agent Memory.\" LangChain is building OpenWiki Brains, OriginTrail is building shared memory systems for agents, and nearly every AI company claims it has \"solved the memory problem.\" But look closer and you will find that most of these solutions are solving the wrong problem.",
+   "next_head": "Imagine your brain is a refrigerator.",
+   "label": "related but abrupt shift",
+   "confidence": "medium",
+   "reason": "The junction crosses a section heading, and the refrigerator analogy is introduced without a bridge to the naming argument."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 15,
+   "prev_tail": "It is which shelf you put it on, whether you labeled it, and where your eyes go first when you open the door.",
+   "next_head": "The name \"Agent Memory\" draws everyone's attention to \"how to store it,\" but what really determines the outcome is whether, when answering a specific question, the system can send the right content to the LLM, in the right form and the right order.",
+   "label": "explicit carry-over",
+   "confidence": "medium",
+   "reason": "'The name Agent Memory' picks up the naming point from the analogy."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 17,
+   "prev_tail": "The name \"Agent Memory\" draws everyone's attention to \"how to store it,\" but what really determines the outcome is whether, when answering a specific question, the system can send the right content to the LLM, in the right form and the right order.",
+   "next_head": "An R&D team ran a systematic evaluation, comparing memory approaches from six major schools on the market.",
+   "label": "related but abrupt shift",
+   "confidence": "low",
+   "reason": "A new evaluation is introduced without stating why it matters to the previous point."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 19,
+   "prev_tail": "The result is somewhat counterintuitive.",
+   "next_head": "Under identical test conditions, the simplest approach (keep the raw conversation text and search it by keyword) scored higher than most carefully engineered systems.",
+   "label": "explicit carry-over",
+   "confidence": "high",
+   "reason": "'The result is somewhat counterintuitive' is followed by the result it refers to."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 21,
+   "prev_tail": "BM25, a text retrieval algorithm born decades ago, ranked consistently near the top across three rounds of evaluation.",
+   "next_head": "What does this mean?",
+   "label": "explicit carry-over",
+   "confidence": "high",
+   "reason": "'What does this mean?' asks about the BM25 result just given."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 23,
+   "prev_tail": "When the information is needed, the retrieval system gets a pile of dry conclusions, stripped of their original warmth and precision.",
+   "next_head": "The evaluation data is clear.",
+   "label": "explicit carry-over",
+   "confidence": "medium",
+   "reason": "'The evaluation data is clear' continues the argument about the compression losses."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 25,
+   "prev_tail": "A one-time LLM extraction is a clearly negative-ROI move.",
+   "next_head": "This conclusion has one important boundary condition.",
+   "label": "explicit carry-over",
+   "confidence": "high",
+   "reason": "'This conclusion' refers to the negative-ROI claim just made."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 27,
+   "prev_tail": "But if the content is compressed and stored, waiting to be hit by passive retrieval, a miss is a miss.",
+   "next_head": "So the real question is not \"how do we make AI remember more.\" The question is \"how do we deliver the right information to the AI at the right moment.\" Storing is only the first step.",
+   "label": "explicit carry-over",
+   "confidence": "medium",
+   "reason": "'So the real question' draws the consequence of the boundary condition; the inference holds."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 31,
+   "prev_tail": "Retrieval is what matters.",
+   "next_head": "Back to Naomi's story.",
+   "label": "related but abrupt shift",
+   "confidence": "low",
+   "reason": "'Back to Naomi's story' returns to the case with no stated reason for the return."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 33,
+   "prev_tail": "The context of the previous conversation is gone, and no mechanism carries yesterday's key information into today.",
+   "next_head": "What does this resemble?",
+   "label": "explicit carry-over",
+   "confidence": "high",
+   "reason": "'What does this resemble?' asks for the analogy of the previous passage."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 37,
+   "prev_tail": "When the client calls, all you can say is, \"Hello, may I ask who is calling?\"",
+   "next_head": "Short-term memory — a summary of task status from the last 7 days, refreshed every hour.",
+   "label": "explicit carry-over",
+   "confidence": "low",
+   "reason": "List item junction: the three layers answer the same question."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 39,
+   "prev_tail": "It answers \"what have I been busy with lately?\"",
+   "next_head": "Core memory — preferences and agreements that stay stable across conversations, injected unconditionally at the start of every conversation.",
+   "label": "explicit carry-over",
+   "confidence": "low",
+   "reason": "List item junction: the items are parallel members of the same list."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 41,
+   "prev_tail": "It is \"what you should know without my having to ask.\" For example, the user's preferred communication style, the team's tech stack, and a few hard lines that must never be crossed.",
+   "next_head": "Archival memory — vector retrieval over the full history of conversations, queried actively when needed.",
+   "label": "explicit carry-over",
+   "confidence": "low",
+   "reason": "List item junction: the archival layer continues the same list of layers."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 45,
+   "prev_tail": "It is \"everything we have discussed before.\"",
+   "next_head": "Because the three layers correspond to three completely different moments of use.",
+   "label": "explicit carry-over",
+   "confidence": "medium",
+   "reason": "'Because the three layers correspond' explains why three layers are needed; the inference holds."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 47,
+   "prev_tail": "Archival memory is the company filing cabinet: you open it only when you know what you are looking for.",
+   "next_head": "Schemes that put all memory into one layer do exist.",
+   "label": "explicit carry-over",
+   "confidence": "medium",
+   "reason": "'Schemes that put all memory into one layer' is the alternative the three-layer argument answers."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 49,
+   "prev_tail": "For free users, lightweight conversations, and scenarios that need fast responses, that cost is completely unacceptable.",
+   "next_head": "Core memory is the most subtle layer in the entire design.",
+   "label": "related but abrupt shift",
+   "confidence": "medium",
+   "reason": "Moves from the cost of one-layer schemes to core memory without a bridge."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 51,
+   "prev_tail": "Existing benchmarks all test \"the user asks a question, and can the system find the answer in its history?\" Core memory solves a different problem: \"What should the agent know even when the user asks nothing?\" No existing evaluation can measure this dimension.",
+   "next_head": "Naomi's expectations were actually simple: I told you my monthly income target is ¥400,000–500,000 (it must be hit).",
+   "label": "related but abrupt shift",
+   "confidence": "medium",
+   "reason": "Moves from core memory to Naomi's example without a bridge."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 53,
+   "prev_tail": "You should just remember them.",
+   "next_head": "If these three points had been automatically injected when she opened a new conversation the next day, her trust would not have collapsed.",
+   "label": "explicit carry-over",
+   "confidence": "high",
+   "reason": "'You should just remember them' is followed by the consequence of remembering."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 57,
+   "prev_tail": "If these three points had been automatically injected when she opened a new conversation the next day, her trust would not have collapsed.",
+   "next_head": "So far we have discussed the memory of a single agent.",
+   "label": "related but abrupt shift",
+   "confidence": "low",
+   "reason": "'So far we have discussed' opens a new section on organizational memory after a heading."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 59,
+   "prev_tail": "But in a team setting, the problem escalates by one dimension.",
+   "next_head": "A PM spent two weeks discussing product direction with an AI, forming a series of judgments and decisions.",
+   "label": "explicit carry-over",
+   "confidence": "medium",
+   "reason": "'In a team setting' sets up the PM example that follows."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 61,
+   "prev_tail": "A new R&D colleague asks the AI: \"Why are we building this feature this way?\" Which version should the AI cite?",
+   "next_head": "If it cites a draft still under discussion and presents it to R&D as settled, what happens?",
+   "label": "explicit carry-over",
+   "confidence": "high",
+   "reason": "The colleague's question is answered by the next sentence about citing a draft."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 72,
+   "prev_tail": "What happens then?",
+   "next_head": "Why do this?",
+   "label": "explicit carry-over",
+   "confidence": "low",
+   "reason": "'What happens then?' answers the question of consequences; the list intervening is structural."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 74,
+   "prev_tail": "Back to Naomi's story: her AI read a draft of the weekly meeting prep, cited the numbers in it as confirmed analysis conclusions, and the user immediately identified it as a \"hallucination.\"",
+   "next_head": "Encoding credibility directly into the directory location means an agent knows whether it can treat a file as truth just by seeing which tier it sits in.",
+   "label": "explicit carry-over",
+   "confidence": "medium",
+   "reason": "'Back to Naomi's story' continues with the draft example that leads to the tiering argument."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 76,
+   "prev_tail": "But while AI cannot yet judge the reliability of information on its own, a crude method is the only reliable one.",
+   "next_head": "This tiering and the three layers of personal memory follow the same idea.",
+   "label": "explicit carry-over",
+   "confidence": "high",
+   "reason": "'This tiering' refers back to the crude-method argument just made."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 80,
+   "prev_tail": "history awaiting retrieval), and credibility (signed-off consensus vs.",
+   "next_head": "Having said all this, there are several things we must candidly admit we have not solved well.",
+   "label": "explicit carry-over",
+   "confidence": "low",
+   "reason": "'Having said all this' summarizes the preceding argument, with a section heading in between."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 82,
+   "prev_tail": "Having said all this, there are several things we must candidly admit we have not solved well.",
+   "next_head": "Timing of session closure.",
+   "label": "explicit carry-over",
+   "confidence": "medium",
+   "reason": "'Having said all this' introduces the open problems; the first item follows as a lead-in."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 84,
+   "prev_tail": "trigger too late and it is as if it never triggered.",
+   "next_head": "Write standards for core memory.",
+   "label": "explicit carry-over",
+   "confidence": "low",
+   "reason": "Open-problem list item continues the same discussion."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 86,
+   "prev_tail": "Implicit preferences (every time she gets a long answer, she says \"shorter\") are harder to catch, because there is no explicit statement for vector retrieval to hit.",
+   "next_head": "The eternal tension between write cost and retrieval quality.",
+   "label": "explicit carry-over",
+   "confidence": "medium",
+   "reason": "The write-standards problem and the write-cost problem belong to one discussion of open problems."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 88,
+   "prev_tail": "There is no approach that delivers cheap writes, rigorous updates, and zero LLM cost at retrieval all at once.",
+   "next_head": "Memory sharing across agents.",
+   "label": "related but abrupt shift",
+   "confidence": "medium",
+   "reason": "Moves to memory sharing across agents with no bridge from the previous open problem."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 92,
+   "prev_tail": "Today, there is no good answer to this question.",
+   "next_head": "Memory is the least glamorous infrastructure in agent products.",
+   "label": "related but abrupt shift",
+   "confidence": "low",
+   "reason": "The closing heading starts a new paragraph with no bridge from the open problems."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 94,
+   "prev_tail": "No one posts on social media that \"your AI remembered what I said last week.\" But it determines something fundamental: whether trust can truly accumulate between AI and people.",
+   "next_head": "The Japanese musician's last words, \"nothing accumulates,\" are an indictment of the entire agent industry.",
+   "label": "explicit carry-over",
+   "confidence": "medium",
+   "reason": "'Accumulate' in the previous paragraph is picked up by 'the musician's last words'."
+  },
+  {
+   "type": "cohesion",
+   "file": "00-original.md",
+   "line": 96,
+   "prev_tail": "No matter how strong its reasoning or how fast its tool calls, trust simply cannot build up.",
+   "next_head": "The industry is shifting from \"what agents can do\" to \"what agents can remember.\" This shift has none of the excitement of a GPT-5 launch, but it may shape the actual product experience more than any model update.",
+   "label": "explicit carry-over",
+   "confidence": "low",
+   "reason": "The industry-level conclusion follows from the trust argument."
+  }
+ ],
+ "colon": [
+  {
+   "type": "colon",
+   "file": "00-original.md",
+   "line": 1,
+   "colon_before": "Agent Memory",
+   "colon_after": "Why Your AI Assistant Keeps Forgetting",
+   "sentence": "Agent Memory: Why Your AI Assistant Keeps Forgetting",
+   "label": "heading/time/ratio metadata or layout",
+   "confidence": "high",
+   "reason": "The colon separates the article title from its subtitle, a layout element."
+  },
+  {
+   "type": "colon",
+   "file": "00-original.md",
+   "line": 5,
+   "colon_before": "Her last words were",
+   "colon_after": "\"In the end, nothing accumulates.\"",
+   "sentence": "Her last words were: \"In the end, nothing accumulates.\"",
+   "label": "quotation or speech",
+   "confidence": "medium",
+   "reason": "'Her last words were' introduces a quotation, so the speech-introduction rule applies."
+  },
+  {
+   "type": "colon",
+   "file": "00-original.md",
+   "line": 7,
+   "colon_before": "ery team building agent products faces the same awkward fact",
+   "colon_after": "users trust the AI as a partner, but its memory is worse than a goldfish's. At least a goldfish neve",
+   "sentence": "This is not an isolated case. Nearly every team building agent products faces the same awkward fact: users trust the AI as a partner, but its memory is worse than a goldfish's. At least a goldfish nev",
+   "label": "other body colon",
+   "confidence": "low",
+   "reason": "The pre-colon clause introduces an awkward fact without a conclusive predicate; the after-colon text is its content."
+  },
+  {
+   "type": "colon",
+   "file": "00-original.md",
+   "line": 9,
+   "colon_before": "The industry has a buzzword for this",
+   "colon_after": "\"Agent Memory.\" LangChain is building OpenWiki Brains, OriginTrail is building shared memory systems",
+   "sentence": "The industry has a buzzword for this: \"Agent Memory.\" LangChain is building OpenWiki Brains, OriginTrail is building shared memory systems for agents, and nearly every AI company claims it has \"solved",
+   "label": "empty cue",
+   "confidence": "medium",
+   "reason": "The pre-colon clause only announces that a buzzword exists, and the after-colon text is a single term; no claim is made."
+  },
+  {
+   "type": "colon",
+   "file": "00-original.md",
+   "line": 29,
+   "colon_before": "02 Three Layers of Memory",
+   "colon_after": "From Forgetting to Knowing What to Remember",
+   "sentence": "02 Three Layers of Memory: From Forgetting to Knowing What to Remember",
+   "label": "heading/time/ratio metadata or layout",
+   "confidence": "high",
+   "reason": "The colon separates a numbered section heading from its subtitle, a layout element."
+  },
+  {
+   "type": "colon",
+   "file": "00-original.md",
+   "line": 31,
+   "colon_before": " The technical reason is actually simple",
+   "colon_after": "every time a new conversation (session) starts, the AI sees a blank page. The context of the previou",
+   "sentence": "Back to Naomi's story. Why did her AI assistant forget everything overnight? The technical reason is actually simple: every time a new conversation (session) starts, the AI sees a blank page. The cont",
+   "label": "conclusion cue",
+   "confidence": "medium",
+   "reason": "'The technical reason is actually simple' is an independent judgment that the following explanation develops."
+  },
+  {
+   "type": "colon",
+   "file": "00-original.md",
+   "line": 45,
+   "colon_before": " Short-term memory is a sticky note on your desk",
+   "colon_after": "you see it the moment you look up. Core memory is your ID card: you carry it everywhere. Archival me",
+   "sentence": "Because the three layers correspond to three completely different moments of use. Short-term memory is a sticky note on your desk: you see it the moment you look up. Core memory is your ID card: you c",
+   "label": "definition or explanation",
+   "confidence": "medium",
+   "reason": "'Short-term memory' is a term defined by the content after the colon."
+  },
+  {
+   "type": "colon",
+   "file": "00-original.md",
+   "line": 45,
+   "colon_before": "mory is the company filing cabinet",
+   "colon_after": "you open it only when you know what you are looking for.",
+   "sentence": "Because the three layers correspond to three completely different moments of use. Short-term memory is a sticky note on your desk: you see it the moment you look up. Core memory is your ID card: you c",
+   "label": "definition or explanation",
+   "confidence": "medium",
+   "reason": "'Archival memory' is a term defined by the content after the colon."
+  },
+  {
+   "type": "colon",
+   "file": "00-original.md",
+   "line": 49,
+   "colon_before": "\" Core memory solves a different problem",
+   "colon_after": "\"What should the agent know even when the user asks nothing?\" No existing evaluation can measure thi",
+   "sentence": "Core memory is the most subtle layer in the entire design. Existing benchmarks all test \"the user asks a question, and can the system find the answer in its history?\" Core memory solves a different pr",
+   "label": "conclusion cue",
+   "confidence": "high",
+   "reason": "'Core memory solves a different problem' is an independent judgment that the question after the colon develops."
+  },
+  {
+   "type": "colon",
+   "file": "00-original.md",
+   "line": 51,
+   "colon_before": "Naomi's expectations were actually simple",
+   "colon_after": "I told you my monthly income target is ¥400,000–500,000 (it must be hit). I was burned by a previous",
+   "sentence": "Naomi's expectations were actually simple: I told you my monthly income target is ¥400,000–500,000 (it must be hit). I was burned by a previous AI, so I have zero tolerance for forgetting. I do not wa",
+   "label": "conclusion cue",
+   "confidence": "medium",
+   "reason": "'Naomi's expectations were actually simple' is an independent judgment that the list of expectations develops."
+  },
+  {
+   "type": "colon",
+   "file": "00-original.md",
+   "line": 55,
+   "colon_before": "03 Organizational Memory",
+   "colon_after": "Not Just an Individual Agent's Business",
+   "sentence": "03 Organizational Memory: Not Just an Individual Agent's Business",
+   "label": "heading/time/ratio metadata or layout",
+   "confidence": "high",
+   "reason": "The colon separates a numbered section heading from its subtitle, a layout element."
+  },
+  {
+   "type": "colon",
+   "file": "00-original.md",
+   "line": 59,
+   "colon_before": " A new R&D colleague asks the AI",
+   "colon_after": "\"Why are we building this feature this way?\" Which version should the AI cite?",
+   "sentence": "A PM spent two weeks discussing product direction with an AI, forming a series of judgments and decisions. Some of these judgments have been signed off; others are still just personal thinking. A new ",
+   "label": "quotation or speech",
+   "confidence": "high",
+   "reason": "'A new R&D colleague asks the AI' is a speech verb with a person as subject, so the quotation rule applies."
+  },
+  {
+   "type": "colon",
+   "file": "00-original.md",
+   "line": 63,
+   "colon_before": "This is a deeper problem",
+   "colon_after": "a team's knowledge also needs \"memory levels.\"",
+   "sentence": "This is a deeper problem: a team's knowledge also needs \"memory levels.\"",
+   "label": "conclusion cue",
+   "confidence": "medium",
+   "reason": "'This is a deeper problem' is an independent judgment that the content after the colon develops."
+  },
+  {
+   "type": "colon",
+   "file": "00-original.md",
+   "line": 72,
+   "colon_before": " Back to Naomi's story",
+   "colon_after": "her AI read a draft of the weekly meeting prep, cited the numbers in it as confirmed analysis conclu",
+   "sentence": "Why do this? Because an agent is not like a person. A person reading a draft naturally knows \"this isn't settled yet,\" but an AI reads text and treats it as fact. Back to Naomi's story: her AI read a ",
+   "label": "other body colon",
+   "confidence": "medium",
+   "reason": "'Back to Naomi's story' is a signpost rather than a claim, and the after-colon text is a narrative example."
+  },
+  {
+   "type": "colon",
+   "file": "00-original.md",
+   "line": 86,
+   "colon_before": " The evaluation data reveals an industry-wide pattern",
+   "colon_after": "the more rigorous the write process (multiple LLM analyses, building knowledge graphs), the more lik",
+   "sentence": "The eternal tension between write cost and retrieval quality. The evaluation data reveals an industry-wide pattern: the more rigorous the write process (multiple LLM analyses, building knowledge graph",
+   "label": "conclusion cue",
+   "confidence": "high",
+   "reason": "'The evaluation data reveals an industry-wide pattern' is an independent judgment that the following text develops."
+  },
+  {
+   "type": "colon",
+   "file": "00-original.md",
+   "line": 92,
+   "colon_before": "\" But it determines something fundamental",
+   "colon_after": "whether trust can truly accumulate between AI and people.",
+   "sentence": "Memory is the least glamorous infrastructure in agent products. No one posts on social media that \"your AI remembered what I said last week.\" But it determines something fundamental: whether trust can",
+   "label": "conclusion cue",
+   "confidence": "medium",
+   "reason": "'But it determines something fundamental' is an independent judgment with a predicate, developed by the content after the colon."
+  }
+ ],
+ "iso3": []
 }

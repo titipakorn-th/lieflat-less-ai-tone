@@ -1,96 +1,96 @@
-Agent 的记忆问题：为什么你的 AI 助手总在失忆
+Agent Memory: Why Your AI Assistant Keeps Forgetting
 
-一个日本音乐人花了 10 小时向 AI 倾诉她的全部计划，第二天付了 30 美元。付费后 9 分钟，她发现 AI 把一切都忘了。
+A Japanese musician spent 10 hours pouring out all of her plans to an AI, and paid $30 for the service the next day. Nine minutes after paying, she discovered the AI had forgotten everything.
 
-她留下的最后一句话是："結局何も積み重なっていかない。"（最终什么都积累不起来。）
+Her last words were: "In the end, nothing accumulates."
 
-这不是个案。几乎所有做 Agent 产品的团队，都在面对同一个尴尬事实：用户把 AI 当伙伴来信任，但 AI 的记忆力连一条金鱼都不如。金鱼好歹没有给用户许诺过"我会记住"。
+This is not an isolated case. Nearly every team building agent products faces the same awkward fact: users trust the AI as a partner, but its memory is worse than a goldfish's. At least a goldfish never promised the user "I'll remember."
 
-行业里有个热闹的话题叫"Agent Memory"。LangChain 在做 OpenWiki Brains，OriginTrail 在做 agent 共享记忆系统，几乎每家 AI 公司都声称自己"解决了记忆问题"。但仔细看会发现，大多数方案在解决的其实是一个错误的问题。
+The industry has a buzzword for this: "Agent Memory." LangChain is building OpenWiki Brains, OriginTrail is building shared memory systems for agents, and nearly every AI company claims it has "solved the memory problem." But look closer and you will find that most of these solutions are solving the wrong problem.
 
-01 被命名歪了的问题
+01 The Misnamed Problem
 
-把冰箱想象成你的大脑。你从超市买回来的东西（新对话里获得的信息），确实需要一个地方放。但真正决定你明天做饭时能不能找到那包虾仁的，不是冰箱的容量，而是你把它放在了哪层、贴没贴标签、以及你打开冰箱门时眼睛先看哪里。
+Imagine your brain is a refrigerator. The things you bring home from the supermarket (the information gained in a new conversation) do need somewhere to go. But what decides whether you can find that bag of shrimp when you cook tomorrow is not the refrigerator's capacity. It is which shelf you put it on, whether you labeled it, and where your eyes go first when you open the door.
 
-"Agent Memory"这个名字把所有人的注意力引向了"怎么存"，但真正决定效果的是"在回答某个具体问题时，能不能把对的内容、以对的形式、以对的顺序送进 LLM"。
+The name "Agent Memory" draws everyone's attention to "how to store it," but what really determines the outcome is whether, when answering a specific question, the system can send the right content to the LLM, in the right form and the right order.
 
-研发团队做了一轮系统评测，对比了市面上六大流派的记忆方案。结论有点反直觉。
+An R&D team ran a systematic evaluation, comparing memory approaches from six major schools on the market. The result is somewhat counterintuitive.
 
-在相同的测试条件下，最简单的做法（保留原始对话文本 + 用关键词搜索）跑出来的分数，比绝大多数精心设计的复杂工程都高。BM25，一个诞生于上世纪的文本检索算法，在三轮评测里稳居前列。
+Under identical test conditions, the simplest approach (keep the raw conversation text and search it by keyword) scored higher than most carefully engineered systems. BM25, a text retrieval algorithm born decades ago, ranked consistently near the top across three rounds of evaluation.
 
-这意味着什么？那些花大力气做"记忆提炼"的方案（用 LLM 把对话压缩成事实卡片、再存进向量数据库），其实在压缩的过程中把关键细节丢掉了。用户说过的语气、上下文、条件限定，压缩完全没了。等到需要调用的时候，检索系统拿到的是一堆干巴巴的结论，失去了原来的温度和精确性。
+What does this mean? The approaches that invest heavily in "memory distillation" (using an LLM to compress conversations into fact cards, then storing them in a vector database) actually lose key details during compression. The tone and context of what the user said, along with their conditions and qualifiers, are gone after compression. When the information is needed, the retrieval system gets a pile of dry conclusions, stripped of their original warmth and precision.
 
-评测数据很清楚：保留原文的方案（MemMachine 得分 0.9169）显著高于事实提取流派（Mem0 约 0.68）。一次性的 LLM 抽取，是明确的负 ROI 动作。
+The evaluation data is clear. Approaches that keep the original text (MemMachine, 0.9169) significantly outperform the fact-extraction school (Mem0, about 0.68). A one-time LLM extraction is a clearly negative-ROI move.
 
-这条结论还有一个重要的边界条件。如果在"读"的阶段让 Agent 自己决定搜什么、搜几次、用不用搜到的内容（类似 Letta 的做法），那压缩造成的损失可以被补回来。但如果压缩完就存着、等被动检索来命中，错过就是错过了。
+This conclusion has one important boundary condition. If, at read time, the agent decides for itself what to search for, how many times to search, and whether to use what it finds (similar to Letta's approach), the losses from compression can be recovered. But if the content is compressed and stored, waiting to be hit by passive retrieval, a miss is a miss.
 
-所以问题其实不是"怎么让 AI 记住更多"。问题是"怎么在对的时刻把对的信息递到 AI 手里"。存只是第一步，取才是关键。
+So the real question is not "how do we make AI remember more." The question is "how do we deliver the right information to the AI at the right moment." Storing is only the first step. Retrieval is what matters.
 
-02 三层记忆：从"失忆"到"知道该记什么"
+02 Three Layers of Memory: From Forgetting to Knowing What to Remember
 
-回到那位日本音乐人 Naomi 的故事。她的 AI 助手为什么会在一夜之间忘掉所有？技术层面的原因其实不复杂：每次开新对话（Session）时，AI 看到的是一张白纸。上一次对话的上下文消失了，没有任何机制把昨天聊过的关键信息传递到今天。
+Back to Naomi's story. Why did her AI assistant forget everything overnight? The technical reason is actually simple: every time a new conversation (session) starts, the AI sees a blank page. The context of the previous conversation is gone, and no mechanism carries yesterday's key information into today.
 
-这像什么呢？像一个公司里没有交接制度。你的同事昨天跟客户聊了三小时，今天轮到你接班，但他什么都没留下。客户打来电话，你只能说"您好，请问您是哪位？"
+What does this resemble? A company with no handover process. Your colleague spent three hours with a client yesterday, and today you take over, but he left nothing behind. When the client calls, all you can say is, "Hello, may I ask who is calling?"
 
-现在的做法是分三层来解决：
+The current approach solves this in three layers:
 
-短期记忆（Short-term Memory）——最近 7 天的任务状态摘要，每小时刷新一次。它回答的是"最近在忙什么"。
+Short-term memory — a summary of task status from the last 7 days, refreshed every hour. It answers "what have I been busy with lately?"
 
-核心记忆（Core Memory）——跨对话都稳定适用的偏好和约定，每次对话开始时无条件注入。它是"我不问你也应该知道的事"。比如用户的沟通风格偏好、团队的技术栈、几个绝对不能碰的红线。
+Core memory — preferences and agreements that stay stable across conversations, injected unconditionally at the start of every conversation. It is "what you should know without my having to ask." For example, the user's preferred communication style, the team's tech stack, and a few hard lines that must never be crossed.
 
-档案记忆（Archival Memory）——全历史对话的向量检索，需要时主动查询。它是"我们之前讨论过的所有事"。
+Archival memory — vector retrieval over the full history of conversations, queried actively when needed. It is "everything we have discussed before."
 
-为什么需要三层而不是一层大而全？
+Why three layers instead of one big layer?
 
-因为三层对应的是三种完全不同的调用时机。短期记忆像工位上的便利贴，抬头就看见；核心记忆像你的身份证，走到哪里都带着；档案记忆像公司的文件柜，知道要找什么的时候才去翻。
+Because the three layers correspond to three completely different moments of use. Short-term memory is a sticky note on your desk: you see it the moment you look up. Core memory is your ID card: you carry it everywhere. Archival memory is the company filing cabinet: you open it only when you know what you are looking for.
 
-把所有记忆都放一层的方案确实存在。测试里它的分数也确实最高（LoCoMo 评测中 generic-roster 方案以 79% 的 pass rate 排第一）。但代价是每次对话要消耗一万多 token 的上下文。对于免费用户、轻量对话、快速响应场景，这个成本完全不可接受。
+Schemes that put all memory into one layer do exist. In tests they also scored highest (in the LoCoMo evaluation, the generic-roster scheme ranked first with a 79% pass rate). But the cost is more than 10,000 tokens of context consumed in every conversation. For free users, lightweight conversations, and scenarios that need fast responses, that cost is completely unacceptable.
 
-核心记忆（Core Memory）是整套设计里最微妙的一层。现有的 benchmark 全部在测"用户问了一个问题，系统能不能从历史里找到答案"。但核心记忆解决的是完全不同的一个问题："用户什么都没问，Agent 也应该知道什么。"这个维度在任何现有评测里都无法被测到。
+Core memory is the most subtle layer in the entire design. Existing benchmarks all test "the user asks a question, and can the system find the answer in its history?" Core memory solves a different problem: "What should the agent know even when the user asks nothing?" No existing evaluation can measure this dimension.
 
-Naomi 的期望其实很简单：我告诉过你我的月收入目标是 40-50 万日元（"必达"），我被之前的 AI 伤过所以对"忘事"零容忍，我不要你自动去发社交媒体帖子。这些事不需要我每次都说，你应该记着。
+Naomi's expectations were actually simple: I told you my monthly income target is ¥400,000–500,000 (it must be hit). I was burned by a previous AI, so I have zero tolerance for forgetting. I do not want you to post on social media automatically. I should not have to say these things every time. You should just remember them.
 
-如果这三条在她第二天开新对话时被自动注入，信任就不会崩塌。
+If these three points had been automatically injected when she opened a new conversation the next day, her trust would not have collapsed.
 
-03 组织级的记忆：不只是 Agent 个人的事
+03 Organizational Memory: Not Just an Individual Agent's Business
 
-到目前为止我们讨论的都是单个 Agent 的记忆。但在一个团队协作的场景里，问题会升级一个维度。
+So far we have discussed the memory of a single agent. But in a team setting, the problem escalates by one dimension.
 
-一个 PM 和 AI 讨论了两周的产品方向，形成了一系列判断和决策。这些判断有的已经拍板确认了，有的还只是个人思考。新加入的研发同事问 AI："这个功能为什么要这么做？"AI 应该引用哪个版本？
+A PM spent two weeks discussing product direction with an AI, forming a series of judgments and decisions. Some of these judgments have been signed off; others are still just personal thinking. A new R&D colleague asks the AI: "Why are we building this feature this way?" Which version should the AI cite?
 
-如果它引用了一段还在讨论中的草稿，当成定论告诉研发，后果是什么？误导。如果它引用了一段已经拍板的共识但没标明来源，研发追问的时候 AI 说不出依据是什么，后果是什么？不信任。
+If it cites a draft still under discussion and presents it to R&D as settled, what happens? Misleading. If it cites a consensus that has been signed off but does not say where it came from, and R&D asks for the basis, the AI cannot explain. What happens then? Distrust.
 
-这是一个更底层的问题：团队的知识也需要"记忆层级"。
+This is a deeper problem: a team's knowledge also needs "memory levels."
 
-在内部把团队空间里的所有文件按可信度分了四层：
+Internally, we sorted every file in the team space into four tiers by credibility:
 
-- 原始材料（raw）——用户访谈原话、数据截图、外部文章原文。一手事实，不改不删，Agent 引用时只能当事实转述、不能解读。
-- 分析供料（compiled）——基于原始材料的分析、调研、思考。有依据但未拍板。Agent 引用时必须标明"这是某人某日的分析，非团队共识"。
-- 团队共识（canon）——经过正式流程拍板确认的决策。Agent 可以直接当"当前真相"引用，不需要加任何前缀。
-- 工作过程件（workspace）——PRD 草稿、会议记录、RFC。它们会"毕业"（上线、定稿、归档），但在毕业之前，Agent 必须标明"在变中、未定稿"。
+- Raw materials — verbatim user interview quotes, data screenshots, original external articles. First-hand facts, not changed or deleted; when an agent cites them, it may only restate them as facts, not interpret them.
+- Analysis inputs (compiled) — analysis, research, and thinking based on raw materials. Grounded, but not yet signed off. When an agent cites them, it must state that "this is someone's analysis from a given date, not team consensus."
+- Team consensus (canon) — decisions confirmed through a formal sign-off process. An agent can cite them directly as "current truth" without any prefix.
+- Work in progress (workspace) — PRD drafts, meeting notes, RFCs. They will "graduate" (ship, get finalized, get archived), but until then, the agent must mark them as "in flux, not finalized."
 
-为什么要这么做？因为 Agent 不像人，人读一份草稿的时候自然知道"这还没定"，但 AI 读到文字就会当成事实去用。回到 Naomi 的故事：她的 AI 读到一份周会准备草稿，把上面的数字当成已确认的分析结论来引用，结果被用户当场识别为"幻觉"。
+Why do this? Because an agent is not like a person. A person reading a draft naturally knows "this isn't settled yet," but an AI reads text and treats it as fact. Back to Naomi's story: her AI read a draft of the weekly meeting prep, cited the numbers in it as confirmed analysis conclusions, and the user immediately identified it as a "hallucination."
 
-把可信度直接编码进目录位置，Agent 看到文件在哪一层就知道能不能当真相引用。这确实是一种笨办法。但在 AI 还不能自己判断信息可靠性的今天，笨办法是唯一可靠的办法。
+Encoding credibility directly into the directory location means an agent knows whether it can treat a file as truth just by seeing which tier it sits in. This is admittedly a crude method. But while AI cannot yet judge the reliability of information on its own, a crude method is the only reliable one.
 
-这套分层和个人记忆的三层其实是同一种思路：不是存更多，而是分清楚。分清楚时效（短期 vs 长期），分清楚确定性（核心记忆 vs 待检索的历史），分清楚可信度（拍板的共识 vs 个人的分析）。
+This tiering and the three layers of personal memory follow the same idea. It is not about storing more; it is about separating things clearly. Separate timeliness (short-term vs. long-term), certainty (core memory vs. history awaiting retrieval), and credibility (signed-off consensus vs. personal analysis).
 
-04 没有解决的问题
+04 Problems Still Unsolved
 
-说了这么多，有几件事必须坦承还没解决好。
+Having said all this, there are several things we must candidly admit we have not solved well.
 
-Session 闭环的时机。对话结束时应该自动提炼出关键信息写入长期记忆。但"对话结束"本身是个模糊概念。用户可能随时回来。触发太早丢信息，触发太晚等于没触发。
+Timing of session closure. When a conversation ends, key information should automatically be distilled and written into long-term memory. But "the conversation has ended" is itself a vague concept. Users may come back at any time. Trigger too early and information is lost; trigger too late and it is as if it never triggered.
 
-核心记忆的写入标准。什么算"稳定偏好"？用户说了一次"我喜欢简洁"算不算？说了三次才算？如果她下周改主意了呢？隐式偏好（每次收到长回答都会说"短一点"）更难捕捉——没有明确的陈述可以被向量检索命中。
+Write standards for core memory. What counts as a "stable preference"? If the user says "I like concise answers" once, does that count? Three times? What if she changes her mind next week? Implicit preferences (every time she gets a long answer, she says "shorter") are harder to catch, because there is no explicit statement for vector retrieval to hit.
 
-写入成本与检索效果的永恒矛盾。评测数据揭示了一条行业级规律：写入越严谨（多次 LLM 分析、构建知识图谱）的方案，在数据量大的时候越容易崩溃。四个复杂方案在长对话测试中全部因为写入超时而直接失败。没有"写入便宜 + 更新严谨 + 检索零 LLM 消耗"三全其美的方案。
+The eternal tension between write cost and retrieval quality. The evaluation data reveals an industry-wide pattern: the more rigorous the write process (multiple LLM analyses, building knowledge graphs), the more likely it is to collapse as the data grows. Four complex schemes all failed outright in long-conversation tests because writes timed out. There is no approach that delivers cheap writes, rigorous updates, and zero LLM cost at retrieval all at once.
 
-跨 Agent 的记忆共享。一个团队里有多个 AI 角色。负责客服的 Agent 知道用户发过脾气，负责产品的 Agent 需不需要知道？该共享多少？这个问题今天没有好的答案。
+Memory sharing across agents. A team has multiple AI roles. The customer-service agent knows the user got angry. Does the product agent need to know? How much should be shared? Today, there is no good answer to this question.
 
-最后
+Finally
 
-记忆是 Agent 产品里最不性感的基础设施。没有人会因为"你的 AI 记住了我上周说的话"而发一条朋友圈。但它决定了一个根本性的东西：AI 和人之间能不能真正积累信任。
+Memory is the least glamorous infrastructure in agent products. No one posts on social media that "your AI remembered what I said last week." But it determines something fundamental: whether trust can truly accumulate between AI and people.
 
-那位日本音乐人最后说的"什么都积累不起来"，其实是对整个 Agent 行业的拷问。如果 AI 没有可靠的记忆，它就只能是一个每次见面都要重新介绍自己的陌生人。不管它的推理能力多强、工具调用多快，信任就是攒不起来。
+The Japanese musician's last words, "nothing accumulates," are an indictment of the entire agent industry. If AI has no reliable memory, it can only be a stranger who has to reintroduce itself every time you meet. No matter how strong its reasoning or how fast its tool calls, trust simply cannot build up.
 
-行业正在从"Agent 能做什么"转向"Agent 能记住什么"。这个转变没有 GPT-5 发布那么热闹，但它可能比任何一次模型更新都更决定产品的实际体验。
+The industry is shifting from "what agents can do" to "what agents can remember." This shift has none of the excitement of a GPT-5 launch, but it may shape the actual product experience more than any model update.

@@ -1,40 +1,60 @@
 # Stage 1 | Detection and Suggestions (before revision)
 
-Article: 《Agent 的记忆问题：为什么你的 AI 助手总在失忆》 (“Agent Memory: Why Your AI Assistant Keeps Forgetting”)
+Article: "Agent Memory: Why Your AI Assistant Keeps Forgetting" (English worked example, translated from a Chinese article; the Chinese source is not included).
 
 ## Scope and criteria
 
-The original is about 2,620 Han characters, with 46 body paragraphs detected. The script first counts fixed constructions, punctuation and structure, then extracts 85 semantic candidates, which the model classifies one by one against closed criteria: 33 synonym-renaming paragraphs, 36 cohesion links between paragraphs, 15 colon sentences, and 1 isomorphic triple.
+The original is 1,829 words with 46 body paragraphs, per `detect.py`. The script counted fixed constructions, punctuation and structure, then extracted 79 semantic candidates: 29 paragraphs for synonym renaming, 34 junctions for cohesion, 16 colon sentences and 0 isomorphic triples. Each candidate was judged against `references/semantic-criteria.md` with a closed label, a confidence and a one-sentence reason (`data-semantic-labels.json`).
 
-Significance follows the skill's existing method. At the script layer: paired Wilcoxon test and Cliff's δ (the project threshold is |δ| ≥ 0.33). At the semantic layer: paired comparison of closed labels. "Significant" below refers to **human-vs-AI differences in the research corpus**. This report does not recompute significance for this article, and does not use it to judge whether the author is an AI. Whether a single article is worth editing also depends on where the hits fall and what they do.
+Significance follows the skill's existing method. "Significant" below refers to **human-vs-AI differences in the research corpus**. This report does not recompute significance for this article, and does not use it to judge whether the author is an AI. Whether a single article is worth editing also depends on where the hits fall and what they do.
 
 ## Metrics
 
-| Metric and layer | Result in this article | Research baseline and significance | Judgment for this article |
+| Metric and layer | Result in this article | Research reference | Judgment |
 |---|---|---|---|
-| Contrast reversal (“不是 A 而是 B”, “not A but B”): script layer | 2 hits, 0.763 per 1k chars | Round one: humans ≈ 0.22, AI ≈ 0.73 per 1k chars. In the 270-pair matched retest, GPT and Opus were both significantly higher, same direction. Supported by both rounds. | Both are in the body argument; recommend editing. |
-| Enumeration comma list ≥3 (dense three-item lists): script layer, model checks function | 10 raw hits, 3.817 per 1k chars. Of these, 6 in the body can be edited; 4 in the classification list should be kept. | Round one: humans ≈ 1.78 per 1k chars. In the paired retest, AI ≈ 1.45× humans; significant, same direction. The paired round and script counts use different bases, so the ratio cannot be applied to compute how far this article exceeds the baseline. | Edit only the 6 body hits; do not change the list just to reach zero. |
-| Conclusion-cue colon: semantic layer | Of 15 colon candidates, 4 judged “conclusion cue”. The rest: 3 headings, 2 quotations, 6 other body colons. | In the paired retest this category differs significantly, AI ≈ 2.1–2.2× humans. **The total number of colons is not itself the signal.** | Edit these 4; keep the other colons. |
-| Isomorphic triple: semantic layer | Coarse screen: 1 group, judged “highly isomorphic”. | Paired retest: this category differs significantly, AI 29.4%, human 10.7%. For single-article flagging, this skill's threshold is at least 2 groups. | Only 1 group here, so not a strong judgment. One low-risk syntactic tweak is possible. |
+| "Not A but B" contrast: script | 3 hits, 1.640 per 1k words (line 72 is a false positive) | Human ≈0.22, AI ≈0.73 per 1k chars | Lines 13 and 76 are real and are edited. Line 72 is a false positive and is kept. |
+| Dense lists ≥3: script, model filters | 9 hits, 4.921 per 1k words | Human ≈1.78 per 1k chars | Edit 2 body lists (lines 25, 47). Keep 7 (reasons below). |
+| Conclusion-cue colon: semantic | 16 colons: 6 conclusion cue, 3 headings, 2 quotation or speech, 2 definition, 2 other body, 1 empty cue | Only the conclusion-cue class differs (AI ≈2.1–2.2× human). The total colon count is not the signal. | Edit the 6 conclusion cues. The script's cue-phrase rule now finds 5 (lines 7, 31, 49, 63, 86); line 7 is kept (see below). |
+| Synonym renaming: semantic, paragraph level | 5 groups across 46 paragraphs (≈0.11 per paragraph); 0 paragraphs with ≥2 groups | Human ≈0.49, AI ≈0.83–0.86 per paragraph | Below threshold. Not in edit scope. |
+| Cohesion chain: semantic, junction level | 34 junctions: 26 explicit carry-over, 8 related but abrupt shift. Two carry-over chains of 6 (lines 33–47) and 9 (lines 59–86) | Threshold ≥6; human median 2, AI median 7 | Flagged. Pending human review (see below). |
+| Isomorphic triples: script | 0 candidates | Human ≈10.7%, AI ≈29.4% of triples | Manual reading finds one group at line 45. Low priority. |
+| Em dash: fingerprint | 7 hits, 3.827 per 1k words | Opus heavy, GPT light | All 7 separate a term from its definition or a list item. Keep with reason. |
+| Semicolon: fingerprint | 4 hits, 2.187 per 1k words | GPT fingerprint (δ +0.80) | Split 3 (lines 59, 82, and 76 through the contrast edit). Keep the one in a list item (line 67). |
+| Quotation marks: fingerprint | 31, 16.949 per 1k words | Opus uses fewer (δ −0.67) | Report only. |
+| Sentence-length CV: structure | 0.662 | Human ≈0.54, AI ≈0.46 | Report only. Do not chase a target value. |
+| Headings | 0 detected | — | Known detector gap: English headings ("01 The Misnamed Problem") are not recognized. |
 
 ## Hit examples and planned edits
 
-**1. Contrast reversal.** Line 13, “不是冰箱的容量，而是……” (“it is not the fridge's capacity but…”), and line 76, “不是存更多，而是分清楚” (“not storing more but distinguishing clearly”), both put the negated side first and then the real claim. The construction appears twice, and both carry a paragraph's conclusion, so the repetition is more noticeable than a single instance. Planned edit: state the judgment directly while keeping the negated information. Fridge capacity cannot decide whether you can find the shrimp; beyond storage size, a memory system must distinguish recency, certainty and credibility. Do not simply delete “容量” or “存储量” (capacity or storage volume), so the argument does not change.
+Line numbers refer to `00-original.md`.
 
-**2. Dense three-item lists.** Line 15, “对的内容、以对的形式、以对的顺序” (“the right content, in the right form, in the right order”), and line 25, “搜什么、搜几次、用不用搜到的内容” (“what to search, how many times, whether to use what is found”), are representative. All three items carry information; the problem is similar structures running in a row. Planned edit: rewrite the first as “把对的内容，按合适的形式和顺序送进 LLM” (“send the right content to the LLM in a suitable form and order”). For the second, keep the three conditions but fold them into one complete action. Lines 67–70 (four hits) are in the file-classification list, where full enumeration is the point; keep them.
+**1. Contrast reversal.** Line 13: "But what decides whether you can find that bag of shrimp … is not the refrigerator's capacity. It is which shelf you put it on …" Line 76: "It is not about storing more; it is about separating things clearly." Both put the negated half first and carry a paragraph's point. Planned edit: state the point directly and keep the negated information. Line 13 becomes "the refrigerator's capacity does not decide whether you can find that bag of shrimp … What matters more is which shelf …". Line 76 becomes "Beyond how much to store, it is also about separating things clearly." Do not delete "capacity" or "storing more", so the argument stays the same.
 
-**3. Conclusion-cue colon.** Line 31, “技术层面的原因其实不复杂：每次开新对话……” (“the technical reason is actually simple: every new session…”), and line 49, “核心记忆解决的是完全不同的一个问题：……” (“core memory solves a completely different problem: …”), both use an abstract claim to signal “the key point follows” before the concrete content. The other two are at lines 7 and 76. Planned edit: check each front clause. If it carries information, keep it and end the sentence with a period; delete only pure signposts. The title colon, the colon introducing Naomi's quote and the colon before the list are not in this category; keep them.
+**2. Dense lists.** Line 25, "what to search for, how many times to search, and whether to use what it finds": the three conditions are all needed, so fold them into one action. Planned: "what to search for and how often it searches, then whether to use what it finds." Line 47, "For free users, lightweight conversations, and scenarios that need fast responses": planned: "For free users and lightweight conversations, and wherever a fast response is needed." Line 15, "the right content, in the right form and the right order", was not flagged by the script but is a three-part list. Planned: "in the right form and order."
 
-**4. One set of isomorphic triples.** Line 45 reads “短期记忆像……；核心记忆像……；档案记忆像……” (“short-term memory is like…; core memory is like…; archival memory is like…”). The three metaphors explain three different recall timings, and the content is useful; only the skeleton is fully parallel. Since this is the only group detected in the article, it is not a strong signal on its own. For a low-risk tweak, change the word order of one clause only, and keep the three images: sticky note, ID card and filing cabinet.
+Kept, with reasons: line 13's list (the three cues are the analogy's concrete points); line 39 (three distinct examples, each with a different syntax); lines 67, 68, 70 (inside Markdown list items, which are not edited); line 86 ("cheap writes, rigorous updates, and zero LLM cost", three separate requirements of one trade-off).
+
+**3. Conclusion-cue colons.** Lines 31, 49, 51, 63, 86 and 92. Each sentence has an independent judgment before the colon ("The technical reason is actually simple", "Core memory solves a different problem", and so on). Planned: if the first half adds information, keep it and end the sentence with a period; if the sentence needs a bridge, use a comma or "namely". Example, line 31: "The technical reason is actually simple. Every time a new conversation …". Example, line 92: "But it determines something fundamental, namely whether trust can truly accumulate …".
+
+Kept colons: the line 7 colon ("faces the same awkward fact:"), which the script flags but the semantic pass labeled other body colon, because the text after it is the specific content of the fact rather than an independent conclusion (low confidence); the title and section headings (layout); the quote lead-ins at lines 5 and 59 (quotation or speech); the definition colons at line 45; the empty cue at line 9 ("a buzzword for this:"), which is a rejected class; the signpost at line 72 and the lead-ins at lines 35 and 65.
+
+**4. Parallel skeleton.** Line 45 has three consecutive sentences with the same frame ("X is …: you …"). Planned: reorder one clause only: "You carry core memory everywhere, like an ID card." The three images (sticky note, ID card, filing cabinet) stay.
+
+**5. Semicolons.** Lines 59 and 82 each join two independent clauses. Planned: split into two sentences.
 
 ## Not in revision scope
 
-Synonym renaming (semantic layer) found 1 group across the 33 candidate paragraphs; there is no concentrated “same concept renamed in every paragraph” problem. The longest continuous explicit carry-over between paragraphs is 5 links, below this skill's threshold of ≥6. The script's flag on line 3, “long pre-modifier”, is a false positive on review. Em dash density is 3.053 per 1k chars, but the dashes mainly separate definitions and list items for the three memory layers and four file types. This metric also shows a clear model difference, so do not remove them uniformly by count. Subheading numbers, “这意味着什么” (“what does this mean”), questions, quotations and metaphors are not cleaned up just because detection flagged them.
+- **Line 72**, "isn't settled yet," but": false positive. It is an ordinary contrast with "but", not the "not A but B" construction.
+- **Synonym renaming**: 5 groups, none in a paragraph with ≥2 groups. No concentrated renaming problem.
+- **Cohesion chains** (lines 33–47 and 59–86): flagged, but not edited. The rule allows one natural break per chain, but no junction here has a broken connective. The only break would need a bridge sentence the author did not write, which changes content and structure. Tagged `pending / human review`.
+- **Metaphors** (refrigerator, sticky note, ID card, filing cabinet): kept. Fit is a human-review item.
+- **Em dashes** (lines 37, 39, 41, 67–70): definition and list separators. Kept.
+- **Quotation marks, sentence-length CV, lexical variety, isomorphic pairs**: report only.
 
 ## Recommendation and pending confirmation
 
-Recommended scope: edit the two contrast reversals, the six body dense lists and the four conclusion-cue colons, and make one light adjustment to the three-clause skeleton at line 45. Keep facts, numbers, qualifiers, quotations, metaphors, lists, sections and paragraph order. Retest with the same script, then deliver the revised full text and the side-by-side page.
+Recommended scope: 2 contrast reversals (lines 13, 76); 3 dense-list edits (lines 15, 25, 47); 6 conclusion-cue colons (lines 31, 49, 51, 63, 86, 92); 2 semicolons (lines 59, 82); 1 parallel clause (line 45). Keep facts, numbers, qualifiers, quotations, metaphors, lists, sections and paragraph order. Retest with the same script.
 
-If you approve this scope, reply `按建议改` (“apply the suggestions”). To keep a certain pattern type, name that type. No body text changes until a reply arrives.
+`02-revised.md` applies this scope. Please confirm, or name a pattern type to keep, before the revision is used.
 
-Detection data: [Script results](data-detect-before.json) · [Per-item semantic labels](data-semantic-labels.json).
+Detection data: [script results, before](data-detect-before.json) · [per-item semantic labels](data-semantic-labels.json).
