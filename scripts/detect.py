@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""单篇/单目录 AI 味检测报告（去AI味 v2 的第一步，只检测不改写）。
+"""Single-file or directory "less AI tone" detection report (step 1 of v2: detect only, no rewriting).
 
-用法：
-    python3 scripts/detect.py <文件或目录> [--json] [--max-hits 5]
-    python3 scripts/detect.py <文件> --candidates [--out 候选.json]
+Usage:
+    python3 scripts/detect.py <file-or-dir> [--json] [--max-hits 5]
+    python3 scripts/detect.py <file> --candidates [--out candidates.json]
 
---candidates 抽取语义层候选（同义重命名段 / 段间衔接接口 / 冒号句 / 三连同构），
-交给会话内 Claude 按 references/semantic-criteria.md 判断，结果并入报告。
+--candidates extracts semantic-layer candidates (synonym-renaming paragraphs / inter-paragraph cohesion
+interfaces / colon sentences / triple isomorphism). The in-session Claude judges them per
+references/semantic-criteria.md; results are merged into the report.
 
-分级：
-    A 机械改    固定句式/标点问题，模型复核后给建议，用户回复后改
-    B 建议改    需要句式重组或换说法，模型逐条复核后给建议，用户回复后改
-    C 只报告    结构/节奏类分布特征，默认不改
-    F 指纹      分模型特征（破折号/分号/引号），解读必须带方向
+Grades:
+    A mechanical fix   fixed sentence-pattern / punctuation issues; model reviews and suggests; edit after user reply
+    B suggested fix    needs sentence restructuring or rewording; model reviews each item; edit after user reply
+    C report only      structure/rhythm distribution features; not edited by default
+    F fingerprint      per-model features (em dash / semicolon / quotation marks); must be read with direction
 
-人类参考值来自两轮实测（见 RESEARCH.md）：
-- 第一轮 629 篇对照（5 模型各 60 篇 vs 329 篇人类，不配对）
-- 第二轮 270 对同题同事实配对 + 43 万次语义判断
-标 [可调] 的阈值是经验值，换语料后应重新标定。
+Human reference values come from two rounds of measurement (see RESEARCH.md):
+- Round 1: 629-doc comparison (5 models x 60 docs vs 329 human docs; unpaired)
+- Round 2: 270 matched pairs (same topic, same facts) + 430k semantic judgments
+Thresholds marked [tunable] are empirical; recalibrate when the corpus changes.
 """
 import argparse
 import json
@@ -28,65 +29,65 @@ from pathlib import Path
 
 EXTS = {".md", ".txt"}
 
-# ---------------- 正则指标（level, 名称, 模式, 人类参考/千字, 建议） ----------------
+# ---------------- Regex indicators (level, name, pattern, human ref per 1k chars, advice) ----------------
 
 REGEX_HITS = [
-    ("A", "翻案腔",
+    ("A", "Contrast reversal",
      r"(?:不是|并非|不在于|与其说)[^，。！？\n]{1,20}[，]?(?:而是|而在于|不如说)",
-     "0.22", "正面直陈：删「不是A」，直接给B。见规则1"),
-    ("A", "提示语冒号",
+     "0.22", "State directly: drop 「不是A」 and give B. See rule 1"),
+    ("A", "Cue-phrase colon",
      r"(?:一句话(?:总结|说|概括)|简单说|说白了|总结|小结|结论|核心(?:是|在于|观点)?"
      r"|关键(?:是|在于)?|重点(?:是)?|原因(?:如下|有|在于)?|问题(?:是|在于)?"
      r"|答案(?:是)?|本质(?:是|上)?|具体(?:来说|如下|包括)?"
      r"|举例(?:来说)?|换句话说|也就是说|我的(?:观点|判断|结论)|建议(?:是)?)[：:]",
-     "0.08", "删提示语直接写内容；前半句承接上文时只换标点。见规则2"),
-    ("A", "起手式",
+     "0.08", "Drop the cue phrase and write the content; if the first half continues the prior sentence, change only the punctuation. See rule 2"),
+    ("A", "Opening formula",
      r"(?:说白了|说穿了|先说结论)[，,]",
-     "0.008", "删掉直接给判断。见规则3"),
-    ("A", "当…时从句",
+     "0.008", "Delete; state the judgment directly. See rule 3"),
+    ("A", "当…时 clause",
      r"当[^，。\n]{2,20}(?<!的时候)时，",
-     "—", "删「当」和「时」，让从句直接作前一分句。见规则4"),
-    ("A", "前置话题壳",
+     "—", "Delete 当 and 时 so the clause serves directly as the preceding clause. See rule 4"),
+    ("A", "Topic-shell frame",
      r"(?:对于[^，。\n]{2,15}来说|对[^，。\n]{2,15}而言|就[^，。\n]{2,15}而言|在[^，。\n]{2,12}方面)",
-     "—", "对象直接放到主语位，删壳子。见规则4"),
-    ("A", "句首连接词",
+     "—", "Put the object directly in subject position; delete the shell. See rule 4"),
+    ("A", "Sentence-initial connective",
      r"(?:^|\n)\s{0,3}(?:然而|因此|此外|与此同时|换言之|总而言之)[，、]",
-     "—", "移到主语后，或换「不过」「其实」。见规则4"),
-    ("B", "顿号并列≥3",
+     "—", "Move after the subject, or use 不过 / 其实 (but / actually). See rule 4"),
+    ("B", "Enumeration comma list ≥3",
      r"[^，。！？；：、\n]{1,14}、[^，。！？；：、\n]{1,14}、[^，。！？；：、\n]{1,14}",
-     "1.78", "能概括就概括；必须保留时打破其中一项的句法。见规则5"),
-    ("B", "过长前置定语",
+     "1.78", "Summarize if possible; if all items must stay, break the syntax of one of them. See rule 5"),
+    ("B", "Long pre-modifier",
      r"(?:一个|一种|一套|这种|这个)[^，。、；：！？\n]{15,}的[一-鿿]{2,5}",
-     "≈0.1", "拆成两个分句，「的」字连续两个以上同。见规则4"),
-    ("H", "拟人化喻体",
+     "0.1", "Split into two clauses (two or more chained 的 count the same). See rule 4"),
+    ("H", "Personifying metaphor",
      r"(?:像|如同|好比|犹如|相当于)[^，。！？\n]{0,6}一[位名个][^，。！？\n]{0,14}"
      r"(?:导师|秘书|助手|顾问|管家|审查员|实习生|军师|教练|伙伴|专家|舵手|灯塔)",
-     "0.002", "换成这东西实际做了什么。见规则6"),
-    ("X", "概括替代(已否决)",
+     "0.002", "Replace with what the thing actually does. See rule 6"),
+    ("X", "Vague summary (rejected)",
      r"(?:显著(?:提升|提高|增长|改善|增加|优势)|大幅(?:提升|增长|提高|改善|下降|减少)"
      r"|明显(?:改善|提升|优势|变化)|效率的提升|众多|海量)",
-     "—", "2026-10-13 对称口径复查净零（AI 更含糊 24.7% vs 更具体 26.0%，数字保留 98%），"
-     "即使同段有具体数值也不改；改写的保真由信息守恒原则兜底"),
-    # ---- 已否决特征：统计并展示，但明确标不改，防过度清理 ----
-    ("X", "序数词小标题(已否决)",
+     "—", "Symmetric recheck on 2026-10-13: net zero (AI vaguer 24.7% vs more specific 26.0%; numbers kept 98%), "
+     "do not edit even when the same paragraph has concrete numbers; fidelity in rewrites is covered by the information-conservation principle"),
+    # ---- Rejected features: counted and shown, explicitly marked do-not-edit, to prevent over-cleaning ----
+    ("X", "Ordinal subheading (rejected)",
      r"(?:^|\n)\s{0,3}#{1,6}\s{0,3}[一二三四五六七八九十][、.]",
-     "—", "实测人类比 AI 更常用（8.6% vs 4.9%），不是 AI 味，不改"),
-    ("X", "「这意味着」复述(已否决)",
+     "—", "Measured: humans use it more than AI (8.6% vs 4.9%); not an AI-tone feature; do not edit"),
+    ('X', '"This means" restatement (rejected)',
      r"(?:这意味着|这表明|这说明)",
-     "—", "配对复测人类更多，三项口径全反向，不改"),
-    ("X", "空转句引列表(已否决)",
+     "—", "Matched-pair retest: humans use it more; all three measures point the opposite way; do not edit"),
+    ("X", "Empty lead-in to list (rejected)",
      r"[^，。！？\n]{0,25}[：:]\s*(?:\n|$)",
-     "—", "配对复测人类高一个量级（目录式长文的正常写法），不改"),
+     "—", "Matched-pair retest: humans are an order of magnitude higher (normal style for catalogue-like long texts); do not edit"),
 ]
 
-# 分号/破折号/引号按字符计，不走逐行命中
+# Em dash / semicolon / quotation marks are counted per character, not per line
 CHAR_HITS = [
-    ("F", "破折号", "——", "0.80", "密度>2/千字优先处理；可安全改的局部用法默认建议改，保留须说明功能"),
-    ("F", "分号", "；", "—", "GPT 指纹（δ+0.80）；可安全拆句时默认建议改，保留须说明层级作用"),
-    ("F", "引号", "“", "—", "Opus 偏少（δ−0.67）；引号少不必然是问题，报告用"),
+    ("F", "Em dash", "——", "0.80", "Density >2/1k chars: handle first; safe local uses are suggested for change by default; if kept, state its function"),
+    ("F", "Semicolon", "；", "—", "GPT fingerprint (δ+0.80); when safely splittable, suggest splitting by default; if kept, state the hierarchical role"),
+    ("F", "Quotation marks", "“", "—", "Opus uses fewer (δ−0.67); fewer quotes is not necessarily a problem; report only"),
 ]
 
-# 同义词轮换组（用词不敢重复的启发式检测，B级）
+# Synonym-rotation groups (heuristic for avoiding word repetition; grade B)
 SYN_GROUPS = [
     ("使用", "采用", "运用", "利用", "借助"),
     ("方法", "方式", "途径", "路径", "做法"),
@@ -97,29 +98,29 @@ SYN_GROUPS = [
     ("帮助", "协助", "助力", "支持"),
 ]
 
-# 阈值 [可调]：换语料后重标
-TH_SENT_CV = 0.55      # 句长CV低于此 → 节奏偏均匀（v1实测 人类0.67 / AI0.58）
-TH_SECT_CV = 0.45      # 节长CV低于此 → 节长偏均匀
-TH_HEAD_KK = 0.50      # 每千字小标题超过此 → 切得偏碎
-TH_ISO_100P = 8.0      # 每百段两句同构超过此 → 同构偏多（人类4.81 / AI9.41）
+# Thresholds [tunable]: recalibrate when the corpus changes
+TH_SENT_CV = 0.55      # sentence-length CV below this → rhythm too uniform (v1 measured: human 0.67 / AI 0.58)
+TH_SECT_CV = 0.45      # section-length CV below this → section lengths too uniform
+TH_HEAD_KK = 0.50      # headings per 1k chars above this → split too finely
+TH_ISO_100P = 8.0      # isomorphic pairs per 100 paras above this → too many (human 4.81 / AI 9.41)
 
-# 人类参考线（270 对配对实测中位值，见 Downloads/分析结果/配对指标结果-按模型分列.csv）。
-# ref 形如 "0.80"（人类中位/千字）或 "4.81/AI9.41"；两侧超界都算偏离（双侧计分）。
+# Human reference lines (median of 270 matched-pair measurements; see Downloads/分析结果/配对指标结果-按模型分列.csv).
+# ref looks like "0.80" (human median per 1k chars) or "4.81/AI9.41"; deviation counts on both sides (two-sided scoring).
 HUMAN_REF = {
-    "句长CV":      {"ref": "0.54",  "ai": "0.46",  "note": "人类忽长忽短；低于参考=节奏均匀", "方向": "低"},
-    "节长CV":      {"ref": "0.83",  "ai": "0.31",  "note": "人类节长参差；低于参考=节节等长", "方向": "低"},
-    "小标题/千字": {"ref": "0.32",  "ai": "1.26",  "note": "人类整篇连写；高于参考=切得碎", "方向": "高"},
-    "两句同构/百段": {"ref": "5.52", "ai": "8.71", "note": "第一层指标4（两句版），中等效应", "方向": "高"},
-    "三句同构/百段": {"ref": "0.41*","ai": "0.84*", "note": "*为启发式粗估，语义判读见判据文件", "方向": "高"},
-    "mtld粗估":    {"ref": "143",    "ai": "227",  "note": "高=换词多；AI 高于人类=不敢重复", "方向": "高"},
-    "破折号":      {"ref": "0.83",  "ai": "2.02",  "note": "Opus 指纹 +0.95 / GPT −0.54，方向相反", "方向": "分模型"},
-    "分号":        {"ref": "0.77",  "ai": "1.51",  "note": "GPT 指纹 δ+0.80；Opus −0.11 无差", "方向": "分模型"},
-    "引号":        {"ref": "20.0",  "ai": "2.7",   "note": "Opus 偏少 δ−0.67；报告用，不改", "方向": "低"},
-    "顿号":        {"ref": "6.12",  "ai": "8.24",  "note": "第一层密集并列（句内塞多项）", "方向": "高"},
-    "冒号":        {"ref": "3.59",  "ai": "2.70",  "note": "总量人类更多；只有「结论提示」子类是真信号，语义层判", "方向": "低"},
+    "Sentence-length CV":  {"ref": "0.54",  "ai": "0.46",  "note": "humans vary sentence length; below reference = uniform rhythm", "direction": "low"},
+    "Section-length CV":   {"ref": "0.83",  "ai": "0.31",  "note": "human section lengths vary; below reference = all sections equal length", "direction": "low"},
+    "Headings per 1k chars": {"ref": "0.32", "ai": "1.26", "note": "humans write whole pieces continuously; above reference = split too finely", "direction": "high"},
+    "Isomorphic pairs per 100 paras": {"ref": "5.52", "ai": "8.71", "note": "layer-1 indicator 4 (two-sentence version), medium effect", "direction": "high"},
+    "Isomorphic triples per 100 paras": {"ref": "0.41*", "ai": "0.84*", "note": "*heuristic estimate; semantic judgment in the criteria file", "direction": "high"},
+    "MTLD (rough)":        {"ref": "143",   "ai": "227",   "note": "high = varied wording; AI above human = avoids repetition", "direction": "high"},
+    "Em dash":             {"ref": "0.83",  "ai": "2.02",  "note": "Opus fingerprint +0.95 / GPT −0.54, opposite directions", "direction": "per-model"},
+    "Semicolon":           {"ref": "0.77",  "ai": "1.51",  "note": "GPT fingerprint δ+0.80; Opus −0.11, no difference", "direction": "per-model"},
+    "Quotation marks":     {"ref": "20.0",  "ai": "2.7",   "note": "Opus uses fewer δ−0.67; report only, do not edit", "direction": "low"},
+    "Enumeration comma":   {"ref": "6.12",  "ai": "8.24",  "note": "layer-1 dense enumeration (many items packed into one sentence)", "direction": "high"},
+    "Colon":               {"ref": "3.59",  "ai": "2.70",  "note": "humans use more colons overall; only the conclusion-cue subtype is a real signal, judged at semantic layer", "direction": "low"},
 }
 
-# ---------------- 切分 ----------------
+# ---------------- Splitting ----------------
 
 HEADING = re.compile(r"^#{1,6}\s")
 BOLD_LINE = re.compile(r"^\*\*[^*]{2,40}\*\*$")
@@ -143,16 +144,16 @@ def split_sents(para):
 
 
 def signature(sent):
-    """句结构指纹：逗号数、有无冒号、有无括号、长度档（沿用第一版，经复测）"""
+    """Sentence-structure signature: comma count, colon present, bracket present, length bucket (from v1, kept after retest)."""
     return (sent.count("，"), "：" in sent or ":" in sent,
             ("（" in sent or "(" in sent), len(sent) // 15)
 
 
 def isomorphic_triples(text):
-    """三连同构候选（供语义层判读）：signature 粗筛出的连续三句，
-    每组带行号与三句原文。粗筛宽（部分同构也收），判读由 Claude 按
-    「高度同构」判据收紧——270 对实测：宽口径 AI 71.1% vs 人类 56.2%
-    无区分力，只有高度同构档有 2.76× 差异。"""
+    """Triple-isomorphism candidates (for semantic judgment): runs of three sentences pre-filtered by signature.
+    Each carries its line number and the three sentences. The pre-filter is wide (partial isomorphism included);
+    Claude tightens it with the "highly isomorphic" criterion. 270-pair measurement: at the wide threshold
+    AI 71.1% vs human 56.2% has no discriminative power; only the highly-isomorphic tier differs (2.76×)."""
     out = []
     for kind, body, first_no in paragraph_blocks(text):
         if kind != "prose":
@@ -177,7 +178,7 @@ def isomorphic_hits(para, n):
 
 
 def paragraph_blocks(text):
-    """按空行切块并分类，返回 [(kind, block_text, first_line_no)]"""
+    """Split on blank lines and classify blocks; returns [(kind, block_text, first_line_no)]."""
     blocks, cur, cur_kind, start = [], [], None, None
     in_fence = False
     for no, line in enumerate(text.splitlines(), 1):
@@ -211,7 +212,7 @@ def paragraph_blocks(text):
 
 
 def mtld(toks, threshold=0.72, min_len=10):
-    """词汇多样性 MTLD 的近似（中文无分词，用二字组当伪词，粗估）"""
+    """Approximate MTLD (lexical diversity). Chinese has no word segmentation, so 2-char bigrams stand in as pseudo-words; rough."""
     if len(toks) < min_len * 4:
         return None
 
@@ -241,7 +242,7 @@ def cv(vals):
     return (var ** 0.5) / m
 
 
-# ---------------- 度量 ----------------
+# ---------------- Metrics ----------------
 
 def measure_docs(docs):
     total_han = 0
@@ -255,7 +256,7 @@ def measure_docs(docs):
 
     for fname, text in docs:
         lines = text.splitlines()
-        # 逐行正则命中（跳过代码围栏内）
+        # Per-line regex hits (skip code fences)
         in_fence = False
         for no, line in enumerate(lines, 1):
             if FENCE.match(line):
@@ -271,7 +272,7 @@ def measure_docs(docs):
         for _, name, ch, *_ in CHAR_HITS:
             char_counts[name] += text.count(ch)
 
-        # 结构
+        # Structure
         blocks = paragraph_blocks(text)
         sect_chars = 0
         for kind, body, first_no in blocks:
@@ -295,7 +296,7 @@ def measure_docs(docs):
         if sect_chars > 0:
             sect_lens.append(sect_chars)
 
-        # 同义词轮换（段内 ≥2 个不同组员）
+        # Synonym rotation (≥2 distinct members in one paragraph)
         for kind, body, first_no in blocks:
             if kind != "prose":
                 continue
@@ -313,8 +314,8 @@ def measure_docs(docs):
 
     return {
         "meta": {
-            "篇数": len(docs), "万汉字": round(total_han / 10000, 2),
-            "段数": n_para, "小标题数": n_head,
+            "docs": len(docs), "han_10k": round(total_han / 10000, 2),
+            "paragraphs": n_para, "headings": n_head,
         },
         "density": {name: round(n / kk, 3) for name, n in
                     [(nm, len(v)) for _, nm, *_ in REGEX_HITS for v in [regex_hits[nm]]]},
@@ -322,20 +323,20 @@ def measure_docs(docs):
         "hits": regex_hits,
         "syn_hits": syn_hits,
         "structure": {
-            "句长CV": round(sent_cv, 3) if sent_cv else None,
-            "节长CV": round(sect_cv, 3) if sect_cv else None,
-            "小标题/千字": round(n_head / kk, 3),
-            "两句同构/百段": round(iso2 / n_para * 100, 2) if n_para else None,
-            "三句同构/百段": round(iso3 / n_para * 100, 2) if n_para else None,
-            "mtld粗估": mtld(all_bigrams),
+            "Sentence-length CV": round(sent_cv, 3) if sent_cv else None,
+            "Section-length CV": round(sect_cv, 3) if sect_cv else None,
+            "Headings per 1k chars": round(n_head / kk, 3),
+            "Isomorphic pairs per 100 paras": round(iso2 / n_para * 100, 2) if n_para else None,
+            "Isomorphic triples per 100 paras": round(iso3 / n_para * 100, 2) if n_para else None,
+            "MTLD (rough)": mtld(all_bigrams),
         },
     }
 
 
-# ---------------- 语义层候选抽取 ----------------
+# ---------------- Semantic-layer candidate extraction ----------------
 
 def first_prose_blocks(text, max_gap=2):
-    """按空行分块的 prose 块（去掉标题/代码/表格），max_gap 行以内算同块。"""
+    """Prose blocks split on blank lines, with headings/code/tables dropped. (max_gap is accepted but unused.)"""
     return [(b, n) for kind, b, n in paragraph_blocks(text) if kind == "prose"]
 
 
@@ -343,7 +344,7 @@ NOISE_RE = re.compile(r"\]\(|\]\s*\(|\||^!|^中文\s*\|")
 
 
 def clean_para(b):
-    """去掉 markdown 强调/链接语法后返回纯文本，噪声行（导航/表格/图片）返回空。"""
+    """Strip markdown emphasis/link syntax and return plain text; noise lines (nav/tables/images) return empty."""
     if NOISE_RE.search(b[:200]):
         return ""
     t = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", b)
@@ -352,22 +353,22 @@ def clean_para(b):
     return t.strip()
 
 
-CAND_CAPS = {"rename": 60, "cohesion": 60, "colon": 80, "iso3": 60}  # 长文防爆，超出截断并标 truncated
+CAND_CAPS = {"rename": 60, "cohesion": 60, "colon": 80, "iso3": 60}  # caps for long docs; overflow is truncated and flagged
 
 
 def extract_candidates(docs):
-    """四类语义层候选。每条带判据类型，供会话内 Claude 按
-    references/semantic-criteria.md 逐条封闭判断（标签+置信度），
-    判断结果写回同结构 JSON 的 label/confidence/reason 字段。"""
+    """Four kinds of semantic-layer candidates. Each carries its criterion type. The in-session Claude
+    judges each one closed-set per references/semantic-criteria.md (label + confidence) and writes results
+    back into the same JSON structure in the label/confidence/reason fields."""
     rename, cohesion, colon, iso3 = [], [], [], []
     for fname, text in docs:
         blocks = [(clean_para(b), no) for b, no in first_prose_blocks(text)]
         blocks = [(b, no) for b, no in blocks if hanzi(b) >= 20]
-        # 1) 同义重命名：段级（每段一条候选，判「换了几次实义说法」）
+        # 1) Synonym renaming: paragraph level (one candidate per paragraph; judge how many substantive rewordings)
         for b, no in blocks:
             if hanzi(b) >= 30:
                 rename.append({"type": "rename", "file": fname, "line": no, "para": b})
-        # 2) 衔接连环：段间接口（上段末句 + 下段首句）
+        # 2) Cohesion chain: inter-paragraph interface (last sentence of previous para + first of next)
         for i in range(len(blocks) - 1):
             a, b = blocks[i][0], blocks[i + 1][0]
             tail = split_sents(a) or [a[-60:]]
@@ -375,7 +376,7 @@ def extract_candidates(docs):
             cohesion.append({"type": "cohesion",
                              "file": fname, "line": blocks[i + 1][1],
                              "prev_tail": tail[-1], "next_head": head[0]})
-        # 3) 冒号句：正文冒号（引号内/标题/列表行除外）
+        # 3) Colon sentences: body colons (excluding quotes, headings, list lines)
         in_fence = False
         for no, line in enumerate(text.splitlines(), 1):
             if FENCE.match(line):
@@ -388,7 +389,7 @@ def extract_candidates(docs):
                               "file": fname, "line": no,
                               "colon_before": m.group(1), "colon_after": m.group(2)[:60],
                               "sentence": line.strip()[:120]})
-        # 4) 三连同构：signature 粗筛 + Claude 判高度同构
+        # 4) Triple isomorphism: signature pre-filter + Claude judges "highly isomorphic"
         iso3.extend(dict(c, file=fname) for c in isomorphic_triples(text))
     all_c = {"rename": rename, "cohesion": cohesion, "colon": colon, "iso3": iso3}
     truncated = {k: len(v) > cap for k, v, cap in
@@ -397,7 +398,7 @@ def extract_candidates(docs):
     meta.update({f"n_{k}": len(v) for k, v in all_c.items()})
     meta["truncated"] = {k: cap for k, cap in CAND_CAPS.items() if truncated[k]} or False
     if meta["truncated"]:
-        # 均匀抽样保留候选（跳读不偏头部），判读覆盖率为截断后条数/总条数
+        # Uniform sampling keeps candidates (not biased to the head); judged coverage = kept / total
         for k, cap in CAND_CAPS.items():
             if truncated[k]:
                 step = len(all_c[k]) / cap
@@ -407,12 +408,12 @@ def extract_candidates(docs):
             "colon": all_c["colon"], "iso3": all_c["iso3"]}
 
 
-# ---------------- 报告 ----------------
+# ---------------- Report ----------------
 
 def fmt_report(r, max_hits):
-    out = ["去AI味检测报告（v2，只检测不改写）", ""]
+    out = ["Less-AI-tone detection report (v2: detect only, no rewriting)", ""]
     m = r["meta"]
-    out.append(f"语料：{m['篇数']} 篇 / {m['万汉字']} 万汉字 / {m['段数']} 段 / {m['小标题数']} 个小标题")
+    out.append(f"Corpus: {m['docs']} docs / {m['han_10k']} 10k Han chars / {m['paragraphs']} paragraphs / {m['headings']} headings")
     out.append("")
 
     def emit(level, title):
@@ -427,8 +428,8 @@ def fmt_report(r, max_hits):
             if n == 0:
                 continue
             any_row = True
-            ref_s = f"（人类≈{ref}/千字）" if ref != "—" else ""
-            sec.append(f"  {nm}：{n} 处，{d}/千字{ref_s}")
+            ref_s = f" (human ≈{ref}/1k chars)" if ref != "—" else ""
+            sec.append(f"  {nm}: {n} hits, {d}/1k chars{ref_s}")
             sec.append(f"    → {adv}")
             for h in hits[nm][:max_hits]:
                 sec.append(f"      · {h['file']}:{h['line']}  {h['excerpt']}")
@@ -437,74 +438,74 @@ def fmt_report(r, max_hits):
             out.append("")
         return any_row
 
-    emit("A", "机械改候选（模型复核后建议，用户回复后改）")
-    emit("B", "建议改候选（模型逐条筛选，用户回复后改）")
-    emit("C", "只报告（默认不改）")
-    emit("H", "人审区（默认保留，用户主动要求时再审）")
-    emit("X", "已否决特征（实测不是 AI 味，仅展示计数——不要改）")
+    emit("A", "Grade A candidates (suggested after model review; edit after user reply)")
+    emit("B", "Grade B candidates (model filters item by item; edit after user reply)")
+    emit("C", "Report only (not edited by default)")
+    emit("H", "Human-review zone (kept by default; review only if the user asks)")
+    emit("X", "Rejected features (measured as not AI tone; counts only, do not edit)")
 
-    # 指纹
-    sec = ["[F] 指纹（分模型特征，解读必须带方向）"]
+    # Fingerprint
+    sec = ["[F] Fingerprint (per-model features; read with direction)"]
     for _, nm, _, ref, adv in CHAR_HITS:
         d = r["char_density"].get(nm, 0)
-        sec.append(f"  {nm}：{d}/千字" + (f"（人类≈{ref}）" if ref != "—" else ""))
+        sec.append(f"  {nm}: {d}/1k chars" + (f" (human ≈{ref})" if ref != "—" else ""))
         sec.append(f"    → {adv}")
     out.extend(sec)
     out.append("")
 
-    # 同义词轮换
+    # Synonym rotation
     if r["syn_hits"]:
-        out.append("[B] 用词不敢重复（同义词轮换启发式，误报可能，逐条复核）")
+        out.append("[B] Word repetition avoided (synonym-rotation heuristic; false positives possible; review each)")
         for h in r["syn_hits"][:max_hits * 2]:
-            out.append(f"  · {h['file']}:{h['line']}  轮换：{h['excerpt']}")
+            out.append(f"  · {h['file']}:{h['line']}  rotation: {h['excerpt']}")
             out.append(f"    {h['context']}")
         out.append("")
 
-    # 结构
+    # Structure
     s = r["structure"]
-    out.append("[C] 结构与节奏（对照人类参考线，偏离才提示；箭头=往哪个方向偏算问题）")
+    out.append("[C] Structure and rhythm (vs human reference lines; flagged only on deviation in the noted direction)")
     flags = []
-    if s["句长CV"] is not None and s["句长CV"] < TH_SENT_CV:
-        ref = HUMAN_REF["句长CV"]
-        flags.append(f"句长CV={s['句长CV']}（人类中位{ref['ref']} / AI {ref['ai']}，偏低=节奏均匀）")
-    if s["节长CV"] is not None and s["节长CV"] < TH_SECT_CV:
-        ref = HUMAN_REF["节长CV"]
-        flags.append(f"节长CV={s['节长CV']}（人类中位{ref['ref']} / AI {ref['ai']}，偏低=节长均匀）")
-    if s["小标题/千字"] > TH_HEAD_KK:
-        ref = HUMAN_REF["小标题/千字"]
-        flags.append(f"小标题{s['小标题/千字']}/千字（人类中位{ref['ref']} / AI {ref['ai']}，偏高=切得碎）")
-    if s["两句同构/百段"] is not None and s["两句同构/百段"] > TH_ISO_100P:
-        ref = HUMAN_REF["两句同构/百段"]
-        flags.append(f"两句同构{s['两句同构/百段']}/百段（人类{ref['ref']} / AI {ref['ai']}，偏高）")
-    if s["三句同构/百段"] and s["三句同构/百段"] > 0.8:
-        ref = HUMAN_REF["三句同构/百段"]
-        flags.append(f"三句同构{s['三句同构/百段']}/百段（人类{ref['ref']} / AI {ref['ai']}，偏高；判读见判据文件）")
+    if s["Sentence-length CV"] is not None and s["Sentence-length CV"] < TH_SENT_CV:
+        ref = HUMAN_REF["Sentence-length CV"]
+        flags.append(f"Sentence-length CV={s['Sentence-length CV']} (human median {ref['ref']} / AI {ref['ai']}; low = uniform rhythm)")
+    if s["Section-length CV"] is not None and s["Section-length CV"] < TH_SECT_CV:
+        ref = HUMAN_REF["Section-length CV"]
+        flags.append(f"Section-length CV={s['Section-length CV']} (human median {ref['ref']} / AI {ref['ai']}; low = uniform section lengths)")
+    if s["Headings per 1k chars"] > TH_HEAD_KK:
+        ref = HUMAN_REF["Headings per 1k chars"]
+        flags.append(f"Headings {s['Headings per 1k chars']}/1k chars (human median {ref['ref']} / AI {ref['ai']}; high = split too finely)")
+    if s["Isomorphic pairs per 100 paras"] is not None and s["Isomorphic pairs per 100 paras"] > TH_ISO_100P:
+        ref = HUMAN_REF["Isomorphic pairs per 100 paras"]
+        flags.append(f"Isomorphic pairs {s['Isomorphic pairs per 100 paras']}/100 paras (human {ref['ref']} / AI {ref['ai']}; high)")
+    if s["Isomorphic triples per 100 paras"] and s["Isomorphic triples per 100 paras"] > 0.8:
+        ref = HUMAN_REF["Isomorphic triples per 100 paras"]
+        flags.append(f"Isomorphic triples {s['Isomorphic triples per 100 paras']}/100 paras (human {ref['ref']} / AI {ref['ai']}; high; see criteria file)")
     for f_ in flags:
         out.append(f"  ⚠ {f_}")
     if not flags:
-        out.append("  （结构节奏各项均在参考区间内）")
-    if s["mtld粗估"]:
-        ref = HUMAN_REF["mtld粗估"]
-        out.append(f"  mtld粗估={s['mtld粗估']}（人类中位≈{ref['ref']} / AI≈{ref['ai']}；高于人类=换词多不敢重复；粗估，仅供参考）")
+        out.append("  (all structure/rhythm metrics within reference ranges)")
+    if s["MTLD (rough)"]:
+        ref = HUMAN_REF["MTLD (rough)"]
+        out.append(f"  MTLD (rough)={s['MTLD (rough)']} (human median ≈{ref['ref']} / AI ≈{ref['ai']}; above human = avoids repetition; rough estimate, reference only)")
     out.append("")
-    out.append("处理顺序建议：先A后B；C级项改写需要动结构或补信息，"
-               "超出白名单边界，只在用户明确要求时另议。")
+    out.append("Suggested order: A first, then B. C-grade rewrites need structural changes or added information, "
+               "which is beyond the whitelist boundary; consider only if the user explicitly asks.")
     return "\n".join(out)
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("target", help="文件或目录")
-    ap.add_argument("--json", action="store_true", help="输出 JSON")
-    ap.add_argument("--max-hits", type=int, default=5, help="每项最多列出的命中数")
+    ap.add_argument("target", help="file or directory")
+    ap.add_argument("--json", action="store_true", help="output JSON")
+    ap.add_argument("--max-hits", type=int, default=5, help="max hits listed per item")
     ap.add_argument("--candidates", action="store_true",
-                    help="抽取语义层候选（rename/cohesion/colon/iso3），不跑常规检测")
-    ap.add_argument("--out", help="候选 JSON 输出路径（默认 stdout）")
+                    help="extract semantic-layer candidates (rename/cohesion/colon/iso3); skip regular detection")
+    ap.add_argument("--out", help="candidate JSON output path (default: stdout)")
     args = ap.parse_args()
 
     p = Path(args.target)
     if not p.exists():
-        print(f"路径不存在：{p}", file=sys.stderr)
+        print(f"Path does not exist: {p}", file=sys.stderr)
         sys.exit(1)
     docs = []
     if p.is_file():
@@ -515,7 +516,7 @@ def main():
                 docs.append((str(f.relative_to(p)),
                              f.read_text(encoding="utf-8", errors="ignore")))
     if not docs:
-        print("未找到 .md/.txt 文件", file=sys.stderr)
+        print("No .md/.txt files found", file=sys.stderr)
         sys.exit(1)
 
     if args.candidates:
@@ -524,16 +525,16 @@ def main():
         if args.out:
             Path(args.out).write_text(payload, encoding="utf-8")
             n = c["meta"]["n_candidates"]
-            print(f"候选 {n} 条 → {args.out}"
-                  f"（rename {c['meta']['n_rename']} / cohesion {c['meta']['n_cohesion']}"
-                  f" / colon {c['meta']['n_colon']} / iso3 {c['meta']['n_iso3']}）")
+            print(f"{n} candidates → {args.out}"
+                  f" (rename {c['meta']['n_rename']} / cohesion {c['meta']['n_cohesion']}"
+                  f" / colon {c['meta']['n_colon']} / iso3 {c['meta']['n_iso3']})")
         else:
             print(payload)
         return
 
     r = measure_docs(docs)
-    if r["meta"]["万汉字"] < 0.05:
-        print("汉字过少（<500），检测无意义", file=sys.stderr)
+    if r["meta"]["han_10k"] < 0.05:
+        print("Too few Han characters (<500); detection is meaningless", file=sys.stderr)
         sys.exit(1)
 
     if args.json:

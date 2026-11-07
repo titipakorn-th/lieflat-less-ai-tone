@@ -1,123 +1,127 @@
 ---
 name: lieflat-less-ai-tone
-description: 三层去 AI 味：脚本检测出分级报告（A 机械改/B 建议改/C 只报告/X 已否决/F 指纹）+ 语义层判读（同义重命名/衔接连环/结论冒号/同构三连），先向用户交付专业、可读的改前报告，列出本篇指标、研究显著性、原文例句和具体改法；收到用户回复后按白名单规则改写，复测并生成前后对比报告（默认 Markdown，与文稿同格式）。规则基于两轮实测（629 篇对照 + 270 对同题同事实配对复测）整理。适用于写作完成后的成稿清理。
+description: Three-layer "less AI tone" pass for Chinese prose. The script produces a graded report (A mechanical fix / B suggested fix / C report only / X rejected / F fingerprint). The semantic layer adds judgments (synonym renaming, cohesion chains, conclusion-cue colons, isomorphic triples). First deliver a readable pre-edit report with this article's metrics, research significance, original example sentences, and concrete fixes. After the user replies, rewrite using the allowlist rules, retest, and produce a before/after report (Markdown by default, same format as the manuscript). Rules are based on two rounds of measurement (a 629-article control corpus, and 270 same-topic, same-fact matched-pair retests). Use for cleanup of finished writing.
 ---
 
-# 去AI味 v2
+# Less AI Tone v2
 
-识别并改写文本中的 AI 写作痕迹。工作顺序是**先检测、用指标与例句讲清发现和改法、等待用户回复、再改写与复测交付**。报告要专业且容易读懂：说明哪些特征在研究语料中显著，本篇实际命中了多少，以及为什么这些位置值得改。模型负责逐条筛选，不把几十个候选和比喻清单交给用户逐项决策。用户回复「按建议改」即可继续，也可以一句话调整范围。规则基于两轮实测：第一轮 629 篇对照语料，第二轮 270 对同题同事实配对复测 + 43 万次语义判断。配对复测推翻了 v1 的三条规则（见「X 级清单」），这部分规则只出现在检测报告里，永不执行。
+Identify and rewrite AI writing traces in text. The workflow is **detect first, explain findings and fixes with metrics and examples, wait for the user's reply, then rewrite and deliver with a retest**.
 
-检测分三层分工：**数得出符号的归脚本**（detect.py 正则/结构指标），**要理解句意的归语义层**（本会话模型按 [references/semantic-criteria.md](./references/semantic-criteria.md) 的封闭判据逐条判断），**机器间共识不够的归人审**（比喻贴切度、暗喻、拟人化喻体——报告里只列人审区，模型不判）。
+The report must be professional and easy to read: say which features are significant in the research corpus, how many this article actually hits, and why those spots are worth changing. The model does the item-by-item screening. It does not hand dozens of candidates and a metaphor list to the user for item-by-item decisions. The user replies 「按建议改」 ("apply the suggestions") to proceed, or adjusts the scope in one sentence.
 
-## 工作流（必须按顺序）
+The rules are based on two measurement rounds: round one, a 629-article control corpus; round two, 270 matched pairs (same topic, same facts) retested, plus 430k semantic judgments. The matched retest overturned three v1 rules (see the X-grade list below). Those rules appear only in the detection report and are never executed.
 
-### 第一步：脚本检测
+Detection has three layers. **Symbol-countable items go to the script** (detect.py regex and structural metrics). **Items that need sentence meaning go to the semantic layer** (the in-session model judges item by item per [references/semantic-criteria.md](./references/semantic-criteria.md)'s closed criteria). **Items where machines don't agree enough go to human review** (metaphor fit, implicit metaphor, personifying metaphor). The report lists them in the human-review zone only; the model does not judge them.
 
-```bash
-python3 scripts/detect.py <文件或目录> [--max-hits 5] [--json]
-```
+## Workflow (follow the order)
 
-拿到分级报告。各级含义和判级依据见 [DETECT.md](./DETECT.md)。**改前这次务必带 `--json` 存档**（第四步对比报告要用）。
-
-### 第 1.5 步：语义层判读（单篇必跑，目录批量可选）
+### Step 1: Script detection
 
 ```bash
-python3 scripts/detect.py <文件> --candidates --out /tmp/candidates.json
+python3 scripts/detect.py <file or directory> [--max-hits 5] [--json]
 ```
 
-对抽出的四类候选（同义重命名段 / 段间衔接接口 / 冒号句 / 三连同构组），按 [references/semantic-criteria.md](./references/semantic-criteria.md) 的判据逐条给出 `label`/`confidence`/`reason`，写回 JSON。判断纪律（43 万次打标的教训）：只按判据判不按整体感觉、每条独立判断不看全文、拿不准选兜底标签、禁止自造标签。
+Get the graded report. Grade meanings and grading basis are in [DETECT.md](./DETECT.md). **Always archive with `--json` before editing**; the step 4 comparison report needs it.
 
-单篇 3000 字约 40-80 条候选，会话内直接判，token 开销可忽略。判完按判据文件末尾的汇总口径算四个数：重命名 次/段、最长连环、结论冒号占比、高度同构三连数。
-
-### 第二步：给用户看检测结果和建议，等待回复
-
-读完脚本报告和语义层四项汇总后，向用户交付一份**专业、可读的改前检测报告**，并在此结束本轮。篇幅随文章和问题数量而定；不能只给一句感想，也不能把原始脚本输出原样贴给用户。报告至少包含：
-
-1. **方法和口径**：说明脚本统计了什么、语义层判读了什么，给出本篇字数、段落数和候选数量。明确区分“研究语料中的统计显著”和“本篇单次命中”；没有做单篇显著性检验就不能宣称本文统计显著，也不能据此断言作者是 AI。
-2. **指标结果与命中去向**：用一张紧凑表列出本篇命中的第一层跨模型指标和第二层单模型指纹。能定位到句子的项目写明**原始命中数、有效命中数、拟改数、保留数**，以及本篇密度、研究参照和证据强度；句长 CV、结构方差等整篇分布指标只报实测值与处置，不强造逐句命中数。原始命中为零也可简列。即使未达处理门槛或决定保留，也不得从报告中删掉这一项；不同轮次计数口径不同，不得混算倍数。
-3. **例句与改法**：对每个建议处理的指标，摘 1–2 处原句并标位置，解释命中机制、对阅读的具体影响，再给可执行的改法。可给短句示意，但不是正式改稿；此时不得写入或交付改后全文。保留事实、限定词和信息点，不用“改得自然些”这种空泛建议。
-4. **排除项与范围**：对每个保留/排除的指标写明数量和理由类别，并至少举一处能定位的例句；标题/清单/引文等正常用途、低优先级命中和指纹项的具体保留理由都在此说明。最后汇总拟修改范围和保留边界，只请用户对**整套建议**回复「按建议改」或提出调整，不逐条索要决定。
-
-**命中清单不可静默删项。** 脚本原始命中与语义候选先完整保存在 JSON；模型复核只能给每条标注“拟改 / 保留 / 误报 / 待核或人审”及理由，不能改写原始计数或把不喜欢的候选移出清单。语义层的“不符合判据”属于有记录的判读结果，也要计入“原始候选 → 有效命中”的差额。若用户提供了文件，保留可追溯的逐条结果文件；主报告用数量和典型例句解释去向，用户无需逐条决策。
-
-**第一、第二层的执行倾向：有效且可定位的命中，默认列为“拟改”。** 研究指标用于筛选值得处理的写法；本篇次数少、密度不高或未达到整篇提示线，只影响报告中的优先级，不能单独成为放过一处有效命中的理由。模型要把“保留”当成需要举证的例外：明确指出该处的修辞、引文、术语、语义关系或作者风格为何不可替换，或说明最小改写仍会损失信息。不能只写“读着自然”“只有一处”“模型未必如此”就保留。若判据尚无法确定，标“待核/人审”并列出原句，不默认为无问题。用户回复前仍只提出建议，不改正文。
-
-写法以指标表配合解释性段落为主。术语可以用，但要解释其含义；数字要有口径和参照，例句要能在原稿定位。目标是让用户清楚看到“检测依据 → 本篇命中 → 原文例子 → 具体改法”，而不是只看到形容词或一串 A/B/C 级别。主报告不贴全部候选、逐项勾选表或全篇比喻清单。
-
-完整案例见 [examples/agent-memory-case/README.md](./examples/agent-memory-case/README.md)：包含改前检测与建议、改后全文、左右两列 HTML 对照和复测结论。
-
-表达方式示例（只示范一个指标段落，完整报告见案例）：
-
-> 脚本在本文找到 2 处“不是 A 而是 B”式对举，密度 0.763 次/千字；第一轮人类参考约 0.22 次/千字，配对复测中 GPT 与 Opus 也同向偏高。第 13 行“不是冰箱的容量，而是……”和第 76 行“不是存更多，而是分清楚”都在段落结论位置。建议把判断直接说出来，同时保留容量与存储量这两个限定，不把反面信息整句删掉。
-
-这份报告是**唯一的改前确认点**。发出后停在检测阶段，**收到用户回复前不得改写文章**。
-
-模型在给出建议前自己复核每条命中，但复核结果必须留痕：A 级的标题、引文等误报标“误报”，不能从原始数中抹掉；A/B 级有效且可安全改写的局部命中默认标“拟改”，保留需给逐处的具体理由；语义层按封闭判据核验（重命名 ≥2 组的段、≥6 连环、结论冒号、高度同构三连 ≥2 组是重点报告门槛），阴性判读也记录。低于整篇门槛但本句确有同类问题，可列低优先级拟改，不能写成本文统计显著；单凭次数少不得排除。判不准则标“待核/人审”并展示，不归零。**C 级句长方差、小节几何等整篇分布指标不可假装成某句的错误；报告实测值，有可定位且不破坏文章结构的改法才建议处理。H 级比喻、暗喻和拟人仍交人审，不让模型假装能判贴切度。**用户主动要求处理 C/H 时按相应约束办理；涉及引文时仍不得改动引文本身。
-
-用户回复「好」「按建议改」「就这样改」等，即按报告中的建议直接进入第三步，不再二次确认。用户提出修改意见时，按其意见调整并进入第三步；如果回复只是提问或明确要求先别改，先回答或暂停，不能把沉默当作同意。用户说「全部改」时，默认指经复核列为拟改的 A+B+语义层+F 局部命中，不包括 X、不可定位的 C 和待人审的 H；用户对 C/H 给出明确要求时按其要求处理。
-
-### 第三步：改写
-
-收到第二步的用户回复后，只改用户接受或调整后的方案纳入的项。改写原则见下。每处改动记录「原文 → 改后 + 命中规则编号」，供第四步复核。
-
-### 第四步：复测 + 前后对比报告
-
-对改写稿重跑 `detect.py`（带 `--json` 存档），然后生成前后对比报告：
+### Step 1.5: Semantic-layer judgment (mandatory for single files; optional for batch directories)
 
 ```bash
-python3 scripts/detect.py 改后.md --json > /tmp/after.json
-python3 scripts/report.py 原文.md 改后.md /tmp/before.json /tmp/after.json \
-    --semantic /tmp/candidates_labeled.json --out 去AI味报告.md
+python3 scripts/detect.py <file> --candidates --out /tmp/candidates.json
 ```
 
-**默认输出 Markdown**（与用户文稿同格式，对照区是改后稿全文、改动处用 `<del>原文</del><ins>新文字</ins>` 标记，其余 md 标记原样保留，整段可直接复制回写作流程）。用户要网页版再加 `--format html`（红绿划线，`open` 浏览器看）。
+For the four candidate types (synonym-renaming paragraphs / inter-paragraph junctions / colon sentences / isomorphic triples), give each one a `label`, `confidence`, and `reason` per the criteria in [references/semantic-criteria.md](./references/semantic-criteria.md), and write them back to the JSON. Judging discipline (lessons from 430k labeling judgments): judge by the criteria, not overall feel; judge each item independently, without the full text; when unsure, use the fallback label; never invent labels.
 
-报告三段式：顶部指标前后对比表（含人类参考列）、中部分级问题清单+语义层判读、底部前后对照。
+A 3k-character article yields about 40–80 candidates. Judge them in-session; the token cost is negligible. Afterwards, compute the four numbers using the summary definitions at the end of the criteria file: renamings per paragraph, longest cohesion chain, conclusion-colon share, and isomorphic-triple count.
 
-复测判读：经复核列为拟改的 A/B/语义/F 局部命中，应核对是否完成修改；标题、清单等误报可保留并在报告里说明。F 指纹密度变化给出方向解读，不强迫归零；C 级结构指标（句长CV、同构/百段）变化给出数字但**不追求推到某个目标值**——把句长CV 从 0.37 拉到 0.67 是机械参差化，比不改更糟。
+### Step 2: Show the detection results and suggestions; wait for the reply
 
-## 改写原则（解决「AI 改写不好」）
+After reading the script report and the four semantic-layer summaries, deliver a **professional, readable pre-edit detection report** to the user, then end the turn. Length depends on the article and the number of issues. Do not give only a one-line impression, and do not paste raw script output. The report must include at least:
 
-这部分是 v2 新增的。模型改写 AI 味的常见失败模式和对策：
+1. **Method and definitions**: state what the script counted and what the semantic layer judged. Give this article's character count, paragraph count, and candidate count. Clearly distinguish "statistically significant in the research corpus" from "a single hit in this article." Without a single-article significance test, do not claim this article is statistically significant, and do not conclude from it that the author is AI.
+2. **Metric results and where hits go**: use one compact table listing this article's layer-1 cross-model metrics and layer-2 single-model fingerprint hits. For items that can be pinned to a sentence, state the **raw hit count, valid hit count, to-edit count, and keep count**, plus this article's density, the research reference, and the evidence strength. Whole-document distribution metrics such as sentence-length CV and structural variance report only the measured value and its disposition; do not manufacture per-sentence hit counts. Zero raw hits may be listed briefly. Even if an item falls below the action threshold or is kept, it must not be removed from the report. Counting bases differ across rounds; do not mix multipliers.
+3. **Examples and fixes**: for each metric proposed for action, quote 1–2 original sentences with their locations, explain how the hit works and its concrete effect on reading, then give an actionable fix. Short sentence sketches are fine, but they are not a formal revision: at this stage, do not write or deliver the full revised text. Preserve facts, qualifiers, and information points. Do not give vague advice such as 「改得自然些」 ("make it more natural").
+4. **Exclusions and scope**: for each kept or excluded metric, state the count and reason category, with at least one locatable example. Normal uses such as headings, lists, and quotations, low-priority hits, and specific reasons for keeping fingerprint items go here. Finally, summarize the proposed edit scope and the kept boundaries. Ask the user only to reply 「按建议改」 to the **whole set of suggestions**, or to request adjustments. Do not ask for item-by-item decisions.
 
-**1. 最小改动。** 一处命中只改解决该问题所必需的部分。不顺便润色，不替换没问题的词，不调整语气详略。没有把握时保持原文。改得越多，错得越多——每次额外改动都是一次新的语义风险。
+**Never silently drop items from the hit list.** Save raw script hits and semantic candidates in full in the JSON first. Model review may only tag each item as `to edit` / `keep` / `false positive` / `pending or human review`, with a reason. It may not change the raw counts or remove disliked candidates from the list. A semantic "does not meet criteria" result is a recorded judgment and counts toward the gap from raw candidates to valid hits. If the user provided a file, keep a traceable item-by-item results file. The main report explains dispositions with counts and typical examples; the user does not need to decide item by item.
 
-**2. 信息守恒。** 原文的观点、事实、限定词完整保留。姓名、数字、日期、引语、来源、因果，改写后每个实词都要能在原文指出出处。「可能」改「一定」是篡改判断强度，不是去 AI 味。
+**Layer 1 and 2 default: valid, locatable hits are listed as `to edit`.** Research metrics are for screening which patterns are worth handling. A low count here, low density, or falling below the whole-article signal line only affects priority in the report. It cannot alone justify letting a valid hit pass. Treat `keep` as an exception that needs evidence: state specifically why the rhetoric, quotation, terminology, semantic relation, or author style at that spot cannot be replaced, or explain that even a minimal rewrite would lose information. Do not keep an item with only 「读着自然」 ("reads naturally"), 「只有一处」 ("only one instance"), or 「模型未必如此」 ("the model may not be like this") as the reason. If the criteria cannot settle an item, tag it `pending / human review`, list the original sentence, and do not assume it has no problem. Before the user replies, only propose; do not edit the text.
 
-**3. 不制造参差。** 句长和段长的离散度实测人机无差异（v1 已证，配对复测确认）。不要为了「像人写的」把句子改得忽长忽短、把段落拆碎。节奏问题只在 C 级报告里提示，默认不逐句改。
+The format is mainly a metrics table with explanatory paragraphs. Terms are fine but must be explained. Numbers need definitions and references. Examples must be locatable in the original. The goal is for the user to see clearly "detection basis → hits in this article → original example → concrete fix," not just adjectives or a string of A/B/C grades. The main report does not include all candidates, item-by-item checkboxes, or the full list of metaphors.
 
-**4. 结构不动。** 标题层级、章节顺序、段落顺序、列表、表格、引用、代码块的位置原样保留。小标题编号**不改**（配对复测已推翻，见 X 级清单）。
+Full example: [examples/agent-memory-case/README.md](./examples/agent-memory-case/README.md). It includes the pre-edit detection and suggestions, the full revised text, a side-by-side two-column HTML comparison, and the retest conclusions.
 
-**5. 有风格参考先读参考。** 同目录有风格文档（写作风格指南、`语言DNA.md` 类）时先读它。冲突时以风格文档为准——那是目标作者的真实写法，不是 AI 痕迹。作者本来就爱用破折号，就不按指纹规则删。
+Example phrasing (one metric paragraph only; see the case for a full report):
 
-**6. 改完自查三件事。**
-- 每处改动能否指出对应的方案项和规则编号？指不出就撤销
-- 实词是否都有出处？没有就撤销
-- 复测后需要处理的 A/B 是否清零、保留的误报是否有说明、C 级指标是否没有大幅摆动？
+> The script found 2 instances of 「不是 A 而是 B」-style contrast ("not A but B") in this article, density 0.763 per 1k chars. The round-one human reference is about 0.22 per 1k chars, and in the matched retest, GPT and Opus were also high in the same direction. Line 13, 「不是冰箱的容量，而是……」 ("not the fridge's capacity but ……"), and line 76, 「不是存更多，而是分清楚」 ("not storing more but being clear about ……"), both sit in paragraph conclusions. Suggest stating the judgment directly while keeping the two qualifiers, capacity and storage volume. Do not delete the contrasting information wholesale.
 
-## 不改的情况
+This report is the **only pre-edit checkpoint**. After it is sent, stop at the detection stage. **Do not rewrite the article until the user replies.**
 
-- 文章框架（同上）
-- 对话体、口语体：本来就是自然表达
-- 问句、设问、问句小标题：正文问句人类远多于 AI，删了更不像人写
-- 文学性表达：散文小说的排比比喻按原有风格判断
-- 体裁要求：学术新闻公文不必强加「我/你」
-- 代码块、外语段落、引文
-- **序数词小标题、「这意味着」复述、空转句引列表、概括替代（同段有数据也不改）**：v1/v2 曾列为规则，270 对配对复测方向反转或净零（人类用得更多/两侧对称），永不改。检测报告的 X 区会标出这些，防止误改
+Before proposing, the model reviews each hit itself, and the review must leave a trace. For A-grade false positives such as headings and quotations, tag them `false positive`; do not subtract them from the raw count. For A/B locatable local hits that can be safely rewritten, tag `to edit` by default; keeping one requires a specific reason for each. The semantic layer is verified against the closed criteria (key report thresholds: a paragraph with ≥2 renaming groups, chains of ≥6 links, conclusion colons, and ≥2 groups of highly isomorphic triples), and negative judgments are also recorded. Items below the whole-article threshold that have the same kind of problem in this sentence may be listed as low-priority `to edit`; they must not be written as statistically significant for this article. Do not exclude them just because the count is low. If an item cannot be determined, tag it `pending / human review` and show it; do not zero it out. **Whole-document distribution metrics such as C-grade sentence-length variance and section geometry must not be presented as errors in any particular sentence. Report the measured value; suggest a fix only if it is locatable and does not break the article's structure. H-grade metaphors, implicit metaphors, and personification go to human review. Do not let the model pretend it can judge fit.** When the user explicitly asks to handle C or H items, follow the corresponding constraints. Quotations must never be altered, even when they are in scope.
+
+When the user replies 「好」 ("OK"), 「按建议改」 ("apply the suggestions"), 「就这样改」 ("make it that way"), or similar, proceed directly to step 3 per the report's suggestions. Do not re-confirm. When the user gives revision notes, adjust to them and proceed to step 3. If the reply is only a question or explicitly asks to hold off, answer or pause first. Do not treat silence as agreement. When the user says 「全部改」 ("change everything"), it means the locally located A + B + semantic + F hits that were reviewed and tagged `to edit`. It excludes X, non-locatable C items, and H items pending human review. If the user gives explicit instructions for C or H items, follow them.
+
+### Step 3: Rewrite
+
+After the user replies to step 2, change only the items included in the plan the user accepted or adjusted. Rewriting principles are below. Log every edit as 「original → revised + rule number」 for review in step 4.
+
+### Step 4: Retest + before/after report
+
+Re-run `detect.py` on the revised draft (archive with `--json`), then generate the before/after report:
+
+```bash
+python3 scripts/detect.py revised.md --json > /tmp/after.json
+python3 scripts/report.py original.md revised.md /tmp/before.json /tmp/after.json \
+    --semantic /tmp/candidates_labeled.json --out less-ai-tone-report.md
+```
+
+**Default output is Markdown**: same format as the user's manuscript. The comparison section is the full revised text, with edits marked as `<del>original</del><ins>new text</ins>`. Other Markdown markup is left as is, so the whole block can be copied back into the writing workflow directly. For a web version, add `--format html` (red strikethrough for deletions, green insertions; view with `open` in a browser).
+
+The report has three parts: at the top, a before/after metrics table (with a human-reference column); in the middle, the graded issue list plus semantic-layer judgments; at the bottom, the before/after comparison.
+
+Reading the retest: for locatable A/B/semantic/F hits that were reviewed and tagged `to edit`, check whether the edit was made. False positives such as headings and lists may stay; explain them in the report. For F fingerprint density changes, give a directional reading and do not force it to zero. For C-grade structure metrics (sentence-length CV, isomorphic pairs per 100 paragraphs), report the numbers but **do not chase a target value**. Pushing sentence-length CV from 0.37 to 0.67 is mechanical variation, which is worse than not editing.
+
+## Rewrite principles (for when AI rewrites come out badly)
+
+New in v2. Common failure modes when a model rewrites AI tone, and countermeasures:
+
+**1. Minimal change.** For each hit, change only what is necessary to fix that problem. No drive-by polishing, no swapping words that are fine, no adjusting tone or level of detail. When in doubt, keep the original. The more you change, the more you get wrong. Every extra edit is a new semantic risk.
+
+**2. Preserve information.** Keep the original's views, facts, and qualifiers intact. For names, numbers, dates, quotations, sources, and causality, every content word must be traceable to the original after rewriting. Changing 「可能」 ("maybe") to 「一定」 ("certainly") alters the strength of a judgment. That is tampering, not removing AI tone.
+
+**3. Do not manufacture variation.** Measured dispersion of sentence and paragraph length shows no human–AI difference (shown in v1, confirmed by matched retest). Do not make sentences alternate long and short, or chop paragraphs up, to "look human-written." Rhythm issues are noted only in the C-grade report and are not edited sentence by sentence by default.
+
+**4. Leave structure alone.** Keep heading levels, section order, paragraph order, lists, tables, quotations, and code block positions exactly as they are. **Do not change subheading numbering** (overturned by matched retest; see the X-grade list).
+
+**5. Read the style reference first.** If the same directory has a style document (a writing style guide, or a style guide such as `voice-DNA.md`), read it first. On conflict, the style document wins: it reflects the target author's real writing, not AI traces. If the author habitually uses em dashes, do not delete them under the fingerprint rule.
+
+**6. Three self-checks after editing.**
+- Can every edit be matched to a plan item and rule number? If not, revert it.
+- Does every content word have a source? If not, revert it.
+- After retest: are the A/B items that needed handling cleared, are kept false positives explained, and have C-grade metrics avoided large swings?
+
+## When not to edit
+
+- Article framework (see principle 4)
+- Dialogue and colloquial style: already natural expression
+- Questions, rhetorical questions, and question-form subheadings: humans use far more questions in body text than AI does, so deleting them makes the text look less human
+- Literary expression: judge parallelism and metaphor in essays and fiction by the original style
+- Genre requirements: academic, news, and official documents need not have 「我/你」 ("I / you") forced in
+- Code blocks, foreign-language passages, and quotations
+- **Ordinal subheadings, 「这意味着」 ("this means") restatements, empty lead-in lists, and vague summaries (not edited even if the same paragraph has data).** These were rules in v1/v2, but the 270-pair matched retest reversed their direction or showed net zero (humans use them more, or the two sides are symmetric). Never edit. The detection report's X section flags them to prevent wrong edits.
 
 ---
 
-## 改写规则（按优先级排序）
+## Rewrite rules (in priority order)
 
-规则里的实测数字：标注「配对复测」的来自 270 对同题同事实语料（GPT-5.6 135 篇 + Opus 4.6 135 篇 vs 人类 270 篇），其余来自第一轮 629 篇对照。两轮都过的才保留为规则。
+Measured figures in the rules: those marked 「配对复测」 ("matched retest") come from the 270-pair same-topic, same-fact corpus (GPT-5.6 135 articles + Opus 4.6 135 articles vs 270 human articles). The rest come from the round-one 629-article control. Only items that passed both rounds are kept as rules.
 
-### 1. 翻案腔
+### 1. Contrast reversal
 
-先立一个读者并没有的误解，再推翻它。「不是……而是……」「并非……而是……」「与其说……不如说……」「表面……实际……」「看似……实则……」「你以为……其实……」「A 不重要，重要的是 B」。清单只是举例，同一动作换任何字面都要改。
+Set up a misunderstanding the reader does not hold, then knock it down. Patterns: 「不是……而是……」 ("not X but Y"), 「并非……而是……」 ("not really X but Y"), 「与其说……不如说……」 ("rather than X, more precisely Y"), 「表面……实际……」 ("on the surface … in fact …"), 「看似……实则……」 ("seems … but actually …"), 「你以为……其实……」 ("you think … but actually …"), 「A 不重要，重要的是 B」 ("A doesn't matter; B does"). The list is examples only: any wording of the same move must be changed.
 
-实测：第一轮 AI 0.73 / 人类 0.22（3.4×）；配对复测欧化构式 GPT δ+0.88 / Opus δ+0.72，两轮同向，是最强的纯写作信号。
+Measured: round one, AI 0.73 / human 0.22 (3.4×). Matched retest, Europeanized constructions: GPT δ+0.88 / Opus δ+0.72. Both rounds point the same way. This is the strongest pure-writing signal.
 
-改法：直接正面下判断，先给判断再给依据。
+Fix: state the judgment directly, first, and give the basis after it.
 
 > ❌ 真正的壁垒不是技术，而是认知。
 > ✅ 真正的壁垒是认知。
@@ -125,13 +129,13 @@ python3 scripts/report.py 原文.md 改后.md /tmp/before.json /tmp/after.json \
 > ❌ 你以为用户在乎功能多少，其实他们只在乎能不能马上用。
 > ✅ 用户首先在乎能不能马上用。
 
-### 2. 提示语冒号
+### 2. Cue-phrase colon
 
-冒号前是「一句话总结」「核心是」「关键在于」「原因如下」这类提示语，替作者宣告下面有结论。
+The part before the colon is a cue phrase such as 「一句话总结」 ("one-line summary"), 「核心是」 ("the core is"), 「关键在于」 ("the key lies in"), or 「原因如下」 ("the reasons are as follows"). It announces on the author's behalf that a conclusion follows.
 
-实测：第一轮 AI 0.29 / 人类 0.08（3.8×）；配对复测语义层「结论提示冒号」AI 2.1 倍于人类，两轮同向。
+Measured: round one, AI 0.29 / human 0.08 (3.8×). Matched retest, semantic-layer conclusion-cue colons: AI at 2.1× human. Same direction in both rounds.
 
-改法分两种。提示语不承担信息时删掉直接写；前半句承接上文时保留、只把冒号换成句号或逗号。判断方法：删掉这半句会不会丢信息或断衔接。
+Two fixes. If the cue phrase carries no information, delete it and write the content directly. If the first half continues the previous text, keep it and replace only the colon with a period or comma. Test: would deleting this half lose information or break the connection?
 
 > ❌ 一句话总结：这个方案成本太高。
 > ✅ 这个方案成本太高。
@@ -139,166 +143,166 @@ python3 scripts/report.py 原文.md 改后.md /tmp/before.json /tmp/after.json \
 > ❌ 原因有两个：交付晚了，预算也超了。
 > ✅ 交付晚了，预算也超了。
 
-**空转句引列表（「我见过的几种典型场景：」+列表）不改。** 第一轮测出 9.4×，但配对复测方向反转：人类高一个量级，目录式长文里这是正常写法。已列入 X 级。
+**Empty lead-in to a list (「我见过的几种典型场景：」 "several typical scenarios I've seen:" + list) is not edited.** Round one measured 9.4×, but the matched retest reversed direction: humans are an order of magnitude higher. In catalogue-style long-form writing this is normal. Listed as X-grade.
 
-不改：引出人物原话；小标题里的冒号；列表项内部；「人擅长的是：判断业务逻辑」这类总说分说（人类内部用量差异 6.6 倍，测不出稳定差异）；网址代码。
+Also not edited: colons introducing a person's direct speech; colons in subheadings; colons within list items; general-then-specific constructions such as 「人擅长的是：判断业务逻辑」 ("what people are good at: judging business logic") (usage varies 6.6× among humans, so no stable difference is measurable); URLs and code.
 
-### 3. 起手式
+### 3. Opening formula
 
-「说白了」「说穿了」「先说结论」。删掉直接给判断。第一轮 3.2×，量小但稳定。
+「说白了」 ("to put it bluntly"), 「说穿了」 ("to be frank"), 「先说结论」 ("conclusion first"). Delete them and state the judgment directly. Round one: 3.2×. Small volume, but stable.
 
-### 4. 翻译腔（四种）
+### 4. Translationese (four patterns)
 
-只处理四种结构。触发标记之外的即使读着生硬也保留——第一轮从 18 种里只筛出 5 种，配对复测又推翻 1 种（「这意味着」），剩这 4 种。
+Only four structures are handled. Anything beyond these trigger markers is kept even if it reads stiffly. Round one screened 5 of 18 candidates; the matched retest then overturned one more (「这意味着」), leaving these four.
 
-**过长前置定语**（第一轮 0.42/千字，配对复测前置定语长 GPT δ+0.48 / Opus δ+0.54）：中心名词前修饰超十五字，或「的」连续两个以上。拆成两个分句。
+**Long pre-modifier** (round one 0.42 per 1k chars; matched retest GPT δ+0.48 / Opus δ+0.54): a modifier before the head noun exceeds fifteen characters, or 「的」 ("-'s / of") appears two or more times in a row. Split it into two clauses.
 
-> ❌ 一个能够帮助团队在不增加人力的情况下显著提升审核速度的工具
+> ❌ 一个能够帮助团队在不增加人力的情况下显著提升审核速度的工具 (a tool that helps the team significantly speed up review without adding headcount)
 > ✅ 这个工具能显著提升审核速度，不需要增加人力
 
-**「当……时」前置从句**：删「当」和「时」，让从句直接作前一分句。确实需要标示时点、删了时间关系变模糊的不改。
+**「当……时」 clause** (a fronted 「当……时」 "when …" clause): delete 「当」 and 「时」 so the clause stands as its own clause. Keep the marker when the time point must be stated and deleting it would blur the temporal relation.
 
-**前置话题壳**：「对于……来说」「就……而言」「在……方面」后面的句子本来就以这个对象为主语时，删壳子。
+**Topic-shell frame**: 「对于……来说」 ("as for …"), 「就……而言」 ("in terms of …"), 「在……方面」 ("in the area of …"). When the sentence already has this object as its subject, delete the shell.
 
-> ❌ 对于早期团队来说，招人是最难的事。
+> ❌ 对于早期团队来说，招人是最难的事。 (For early teams, hiring is the hardest thing.)
 > ✅ 早期团队最难的事是招人。
 
-**句首连接词当路标**：「然而，」「因此，」「此外，」尤其相邻段落连续这样开头。移到主语后，或换「不过」「其实」。论证确实需要显式路标时不改。
+**Sentence-initial connective as signpost**: 「然而，」 ("however,"), 「因此，」 ("therefore,"), 「此外，」 ("in addition,"), especially when consecutive paragraphs open this way. Move it after the subject, or swap it for 「不过」 ("but") or 「其实」 ("in fact"). Keep it when the argument truly needs an explicit signpost.
 
-**「这意味着」「这表明」式复述不改。** 第一轮 0.15/千字收录，配对复测三项口径全部反向（人类 0.027 vs AI 0.016 每千字）。已列入 X 级。
+**「这意味着」 ("this means") and 「这表明」 ("this shows") restatements are not edited.** Round one listed it at 0.15 per 1k chars. The matched retest reversed direction on all three counting definitions (human 0.027 vs AI 0.016 per 1k chars). Listed as X-grade.
 
-### 5. 顿号罗列过密
+### 5. Dense enumeration-comma lists
 
-一个分句内两个以上顿号、连起三项以上并列。第一轮 AI 3.21 / 人类 1.78；配对复测密集并列 AI 1.45 倍，两轮同向。
+More than two enumeration commas in one clause, or a parallel series of three or more items. Round one: AI 3.21 / human 1.78. Matched retest: dense parallel lists AI 1.45×. Same direction in both rounds.
 
-改法：能概括就概括；必须保留时改变其中一项的句法，不让它们排成同一结构。不改法规条目、配置清单等必须完整列出的；Markdown 列表内部。句内排比（「提升效率，降低成本，优化体验」）人类用得不比 AI 少，不在本条范围。
+Fix: summarize if you can. If every item must stay, change the syntax of one item so they don't share one structure. Do not edit statutory provisions, configuration lists, or anything that must be listed in full, or the inside of Markdown lists. In-clause parallelism (「提升效率，降低成本，优化体验」 "raise efficiency, cut costs, improve the experience") is used by humans no less than by AI, so it is outside this rule.
 
-### 6. 相邻句结构同款
+### 6. Adjacent sentences with the same structure
 
-相邻句同一句法骨架，逗号位置一样、成分顺序一样、收尾一样。第一轮每百段 AI 9.41 / 人类 4.81；配对复测高度同构 AI 1.6 倍（三连句 2.75 倍），两轮同向。
+Adjacent sentences share one syntactic skeleton: same comma positions, same order of components, same ending. Round one per 100 paragraphs: AI 9.41 / human 4.81. Matched retest: highly isomorphic pairs AI 1.6× (triples 2.75×). Same direction in both rounds.
 
-改法：打散其中一句——合并、拆分、换语序或改短句。只改句内，不动段落顺序不删信息。
+Fix: break up one of the sentences by merging, splitting, reordering, or shortening it. Edit within the sentence only; do not change paragraph order or delete information.
 
 > ❌ Cloudflare 发长文提了一套凭证隔离框架。AWS 把 Kiro Crew 开源了，一个多 agent 编排平台。Y Combinator 也把内部工具 QM 放出来了。
 > ✅ Cloudflare 发长文提了一套凭证隔离框架。AWS 和 Y Combinator 则各自开源了一套编排工具，Kiro Crew 配签名审计日志，QM 自带「人类批准门」。
 
-平级案例凑数时可合并同类项、次要的压成半句，信息不删只改主次。叙事推进（先发生什么、结果如何）不算。清单式段落、对话引语、文学排比不改。
+When parallel examples are padding, merge like items and compress minor ones into half-clauses. Information is not deleted; only the emphasis changes. Narrative progression (what happened first, what came of it) does not count. Do not edit list-style paragraphs, dialogue quotations, or literary parallelism.
 
-### 7. 拟人化喻体（人审区，不自动改）
+### 7. Personifying metaphors (human-review zone; not auto-edited)
 
-把工具系统比作理想化的人：「像一位智慧的导师」「永不疲倦的初级审查员」。第一轮 7.3×，配对复测拟人化喻体 AI 1.2 倍（弱信号）——但两侧近饱和（99.3%/97.4% 的文章都含拟人），差异不在「有没有」在贴切度，而贴切度模型判不准（与比喻贴切度同族，模型间共识 0–40%）。
+Comparing a tool or system to an idealized person: 「像一位智慧的导师」 ("like a wise mentor"), 「永不疲倦的初级审查员」 ("a tireless junior reviewer"). Round one: 7.3×. Matched retest: personifying metaphors AI 1.2× (weak signal). But both sides are near saturation (99.3% / 97.4% of articles contain personification). The difference lies not in "whether" but in fit, and models cannot judge fit (same family as metaphor fit; inter-model agreement 0–40%).
 
-2026-10-26 起移入人审区：模型对贴切度理解不可靠，默认保留比喻和拟人，不用全篇清单打断改写。用户主动要求检查 H 级时，再列出命中原句供人审，**不评级不给意见**；明确要求把某条改成非比喻时，平实陈述这个工具/系统实际做了什么。
+Moved to the human-review zone on 2026-10-26: models are unreliable on fit. By default, keep metaphors and personification, and do not interrupt the rewrite with a whole-article list. When the user explicitly asks to check H-grade items, list the matching original sentences for human review, **without grading or opinion**. When the user explicitly asks to turn one into a non-metaphor, state plainly what the tool or system actually does.
 
-### F 级单模型指纹的处置
+### Handling F-grade fingerprints
 
-**指纹是研究语料中的模型使用偏好，不能用来反推这篇文章由哪个模型写成。** 不要求用户提供生成模型；未知来源文本照样检测，但报告只说“本篇密度/用法与哪种指纹方向相似”，不说“这篇来自某模型”。对可定位、可安全改写的指纹用法，默认提出最小改法；次数与密度用于排序，不是单项豁免。模型的语义判断只核对具体用法，不能把单模型差异说成跨模型通用事实。
+**A fingerprint is a model-usage tendency in the research corpus. It cannot be used to infer which model wrote this article.** Do not ask the user for the generating model. Texts of unknown origin are still checked, but the report says only "this article's density or usage is similar to fingerprint direction X," not "this article came from model X." For locatable, safely rewritable fingerprint usage, propose the minimal fix by default. Count and density are for ranking, not a per-item exemption. Semantic judgment only verifies specific usage; do not present a single-model difference as a cross-model general fact.
 
-- **破折号**：>2/千字为优先处理线，不是唯一入口。逐处检查，装饰性停顿或把本可直说的结论悬置起来时默认建议改；承担必要强调、插入解释或人物语气且改动会损失作用时保留，并写明理由。
-- **分号**：逐处看能否安全拆成句号；连续分号让一句承载过多层次时优先建议拆。确有并列层级或逻辑对应、拆句会损失关系时保留。
-- **引号**：Opus 偏少不构成补引号的理由。按引语、专名和原文标注需要处理，不凭指纹增删。
-- **高度同构三连**：按第 13 条的封闭语义判据确认；达到整篇报告门槛时优先处理，单组确有机械复用也可列低优先级拟改。刻意修辞、清单和叙事中的三件事保留，并说明依据。
+- **Em dashes**: more than 2 per 1k chars is the priority threshold, not the only entry point. Check each one. When it is a decorative pause, or it suspends a conclusion that could be stated directly, propose an edit by default. Keep it when it carries necessary emphasis, inserts an explanation, or conveys a character's tone and an edit would lose that effect, and state the reason.
+- **Semicolons**: check each one for whether it can safely become a period. When consecutive semicolons make one sentence carry too many layers, prioritize splitting. Keep it when there is a real parallel hierarchy or logical correspondence and splitting would lose the relation.
+- **Quotation marks**: Opus using few is not a reason to add quotation marks. Handle them according to quotations, proper names, and the original's markup. Do not add or remove them based on the fingerprint.
+- **Highly isomorphic triples**: confirm with the closed semantic criteria in rule 13. Prioritize when the whole-article report threshold is met. A single group with genuinely mechanical reuse may be listed as low-priority `to edit`. Keep deliberate rhetoric, lists, and three-event sequences in narrative, and state the basis.
 
-F 级可改的局部候选默认提出改法；保留要举出这处表达不可替换的具体功能，不能只因数量少或作者模型未知而放过。指纹中“引号偏少”等缺失型、句长分布等整篇型指标没有逐处命中可改，只报告方向或在确有独立问题时处理。研究中的单模型显著不等于本篇单次命中显著。
+For locatable F-grade candidates that can be edited, propose the fix by default. To keep one, name the specific function this expression cannot lose. Do not let it pass just because the count is low or the author model is unknown. Missing-type fingerprint features such as 「引号偏少」 ("too few quotation marks") and whole-document features such as sentence-length distribution have no per-instance hits to edit. Report only their direction, or handle them only when there is an independent problem. Single-model significance in the research does not mean a single hit in this article is significant.
 
-### 8. 破折号（指纹规则，密度决定优先级）
+### 8. Em dashes (fingerprint rule; density sets priority)
 
-**破折号密度 >2/千字时优先处理；低于这条线也逐处检查可否安全改写。** 配对复测显示分模型极端分化：GPT −0.54（比人类还少）/ Opus +0.95（偏多）。密度低于人类参考值 0.80/千字的文本不因“缺破折号”而补写。
+**At more than 2 per 1k chars, handle first. Below that line, still check each instance for safe rewriting.** Matched retest shows extreme model divergence: GPT −0.54 (even fewer than humans) / Opus +0.95 (more). Text with density below the human reference of 0.80 per 1k chars is not given dashes just because it "lacks" them.
 
-确需改时：直接写完整句子，或在不损失语义关系的前提下改用逗号、句号。
+When an edit is needed: write a complete sentence, or use a comma or period if the semantic relation is preserved.
 
 > ❌ 答案其实很简单——专注。
 > ✅ 答案是专注。
 
-### 9. 段首零主语评论（降级：不再自动检测）
+### 9. Zero-subject paragraph-opening comments (downgraded: no longer auto-detected)
 
-原为改写规则（补「这」字）。2026-10-26 裁定不再列入检测与改写：该特征为第三层弱信号（配对复测 AI 4.9% vs 人类 3.3%，约 1.5 倍，接近临界），且与第四层已反转的「句间指代不清」（人类不清率是 AI 4-5 倍，多为可控紧凑）属同族——AI 的阅读负担不在语法层指代，在概念层换说法（见规则 11）。正文遇到读着悬空的段首评论仍可按「补回指词」处理，但不扫描、不计分、不进报告。
+Formerly a rewrite rule (add 「这」 "this" as a referent). On 2026-10-26 it was ruled out of detection and rewriting. This feature is a weak layer-3 signal (matched retest AI 4.9% vs human 3.3%, about 1.5×, near the threshold). It belongs to the same family as the reversed layer-4 「句间指代不清」 "unclear cross-sentence reference": humans are unclear 4–5× as often as AI, mostly in controllable, compact ways. AI's reading burden lies not in grammatical reference but in conceptual rewording (see rule 11). If body text has a paragraph-opening comment that reads as dangling, you may still apply "add back a referent." But do not scan for it, score it, or report it.
 
-> 原规则 9（概括盖住同段具体信息）2026-10-13 撤销——对称口径复查概括替代净零（更含糊 24.7% vs 更具体 26.0%），净零特征不进改写集，整条降 X 级，见 X 级清单。
+> Original rule 9 (a vague summary covering specific information in the same paragraph) was withdrawn on 2026-10-13. A symmetric re-check found vague summaries at net zero (vaguer 24.7% vs more specific 26.0%). Net-zero features do not enter the rewrite set. The whole rule is downgraded to X; see the X-grade list.
 
 ---
 
-### 语义层改写规则（第 10-13 条，配合第 1.5 步判读结果使用）
+### Semantic-layer rewrite rules (rules 10–13, used with the step 1.5 results)
 
-四项基于 270 对配对复测统计显著（同义重命名为单模型判据，弱一档）。改写只动逐条复核后纳入方案的项。
+All four are statistically significant in the 270-pair matched retest. Synonym renaming uses a single-model criterion and is one notch weaker. Rewrites touch only items that passed item-by-item review and were included in the plan.
 
-### 10. 同义重命名（段级）
+### 10. Synonym renaming (paragraph level)
 
-同一实体/概念在段内换实义说法（「优化／增强／提升／提高」轮着用；「版图→基地→项目→节点」叫同一个项目），读者要做「X 就是 Y」的等同连接。配对复测：AI 0.83-0.86 次/段 vs 人类 0.49；≥2 次重灾段 AI 20.6-22.5% vs 人类 8.4%。**证据注记：Jev 单模型一轮判据，跨模型同向但未迭代，稳健性弱于其他三条。**
+The same entity or concept gets different substantive names within a paragraph (「优化／增强／提升／提高」 "optimize / enhance / upgrade / raise" rotated; 「版图→基地→项目→节点」 "footprint → base → project → node" naming one project). Readers must make an 「X 就是 Y」 ("X is Y") equivalence link. Matched retest: AI 0.83–0.86 per paragraph vs human 0.49; heavy paragraphs with ≥2 instances, AI 20.6–22.5% vs human 8.4%. **Evidence note: single-model, one-round criterion by Jev. Same direction across models but not iterated, so less robust than the other three rules.**
 
-改法：同义链统一回原名词。零信息损失——人类范本就是反复用原名的写法（人类语料里同一段 3 次原名重复的实测例）。
+Fix: revert the synonym chain to the original noun. Zero information loss: the human exemplars do exactly this, repeating the original name (measured in the human corpus: one paragraph repeats the original name three times).
 
-> ❌ 采用兼容体系……站点利用率就可能提升（同段前文说的是「优化」「增强」）
-> ✅ 采用兼容体系……站点利用率就可能优化（统一回原词）
+> ❌ 采用兼容体系……站点利用率就可能提升（同段前文说的是「优化」「增强」 "earlier in the paragraph: 'optimize', 'enhance'"）
+> ✅ 采用兼容体系……站点利用率就可能优化（统一回原词 "revert to the original word"）
 
-不改：不同实体恰好用近义词（判据要求同一概念）；术语首次引入时「又名 X」的正式介绍；文学性指称变化。
+Do not edit: different entities that happen to use near-synonyms (the criterion requires the same concept); a formal introduction of a term on first use, such as 「又名 X」 ("also known as X"); literary variation in reference.
 
-### 11. 衔接连环过长
+### 11. Overlong cohesion chains
 
-段段紧扣、零跳转。判读口径：连续「明确承接」接口数 ≥6（AI 短文中位 7 连环 vs 人类 2，93% 的 AI 文有 ≥6 连环）。真正问题不是承接词频率（两侧都低，无害），是零跳转的背景概率——读者全程被动接收，无需参与推理。
+Every paragraph ties tightly to the last, with zero jumps. Judgment definition: consecutive `explicit carry-over` junctions ≥6 (AI short texts median 7-link chains vs human 2; 93% of AI articles have a chain of ≥6). The real problem is not connective frequency (low on both sides, harmless) but the background probability of zero jumps: readers passively receive the whole way and never have to infer anything.
 
-改法：在连环中选 1-2 个接口改成自然跳跃——话题跟着材料走，不替读者预先铺垫。改前检查该接口是否承担因果/伏笔功能，承担则换下一个接口。
+Fix: in a chain, change 1–2 junctions to natural jumps. Let the topic follow the material; do not pre-lay groundwork for the reader. Before changing a junction, check whether it carries causal or setup function. If it does, pick the next junction.
 
-> ❌ 每段开头都接住上一段末句关键词（「这也解释了为什么……」「从这个角度看……」连环 7 段）
-> ✅ 选一处直接切话题（人类范本：从主业务直接跳到一句新业务的引语，中间不铺垫）
+> ❌ 每段开头都接住上一段末句关键词（「这也解释了为什么……」「从这个角度看……」连环 7 段 "every paragraph opens by picking up the last paragraph's keyword, with 「这也解释了为什么……」 'this also explains why …' and 「从这个角度看……」 'from this angle …', a 7-paragraph chain"）
+> ✅ 选一处直接切话题（人类范本：从主业务直接跳到一句新业务的引语，中间不铺垫 "human exemplar: jumps from the main business straight to a quote about a new business, with no setup in between"）
 
-不改：论证链的关键环节；文类本身要求紧扣（教程、法律文书）。
+Do not edit: key links in an argument chain; genres that require tight linking (tutorials, legal documents).
 
-### 12. 结论提示冒号（语义层版）
+### 12. Conclusion-cue colon (semantic-layer version)
 
-规则 2 的语义层补充：只有「冒号前给出独立明确的结论性判断，冒号后展开论证」这一类才是真信号（AI 2.1-2.2 倍）。冒号总量人类反而多，「空转提示引列表」人类高一个量级（X 级）。
+Semantic-layer supplement to rule 2. Only the class 「冒号前给出独立明确的结论性判断，冒号后展开论证」 (a clear, independent conclusion before the colon, with argument developing it after) is a true signal (AI 2.1–2.2×). Humans use more colons overall. 「空转提示引列表」 (an empty cue leading into a list) is an order of magnitude higher in humans (X-grade).
 
-改法同规则 2：删提示语直接写内容；前半句承接上文时只换标点。
+Fix as in rule 2: delete the cue and write the content directly. If the first half continues the previous text, change only the punctuation.
 
-### 13. 高度同构三连
+### 13. Highly isomorphic triples
 
-连续三句共用同一句法骨架（「叫什么名字？／承载什么功能？／嵌入哪个生态？」）。宽口径排比无区分力（人类本就爱排比），只有骨架逐字复刻的**高度同构**档是信号（AI 29.4% vs 人类 10.7%）。指纹层特征，证据强度弱于第一层。
+Three consecutive sentences share one syntactic skeleton (「叫什么名字？／承载什么功能？／嵌入哪个生态？」 "What is it called? / What function does it carry? / Which ecosystem does it embed in?"). Broad parallelism has no discriminating power, since humans also favor parallelism. Only the **highly isomorphic** tier, where the skeleton is copied word for word, is a signal (AI 29.4% vs human 10.7%). It is a fingerprint-layer feature, with weaker evidence than layer 1.
 
-改法：拆掉其中一句——合并、拆分、换语序或改短句，打破骨架复用。不是删掉一项内容。
+Fix: break up one sentence by merging, splitting, reordering, or shortening it, to break the skeleton reuse. This is not deleting an item of content.
 
-> ❌ 服务网络能不能覆盖到我春节回老家的那段路？／车的残值能不能经得起检验？／这家公司出了问题谁来管？
+> ❌ 服务网络能不能覆盖到我春节回老家的那段路？／车的残值能不能经得起检验？／这家公司出了问题谁来管？ (Can the service network cover the stretch of road I take home for Spring Festival? / Can the car's residual value withstand scrutiny? / If this company runs into trouble, who takes responsibility?)
 > ✅ 服务网络能不能覆盖到我春节回老家的那段路？车的残值经不经得起检验，谁说了算？出了问题这家公司管不管？
 
-不改：刻意修辞（演讲、檄文、诗歌）；清单/表格体；叙事推进的三件事（先发生什么、结果如何）。
+Do not edit: deliberate rhetoric (speeches, manifestos, poetry); list or table style; three-part narrative progression (what happened first, what came of it).
 
 ---
 
-## X 级清单（永不改，防误改）
+## X-grade list (never edit; prevents wrong edits)
 
-| 特征 | v1 依据 | 配对复测结果 | 处置 |
+| Feature | v1 basis | Matched retest result | Disposition |
 |------|--------|--------------|------|
-| 序数词小标题 | 3.1× | **反转**：人类 8.6% vs AI 4.9% | 永不改 |
-| 「这意味着」复述 | 翻译腔收录 | **反向**：人类 0.027 vs AI 0.016/千字 | 永不改 |
-| 空转句引列表 | 9.4× | **反向**：人类高一个量级 | 永不改 |
-| 概括替代（同段有数也不改） | 语义层 24.7%（单侧口径） | **对称口径净零**：更含糊 24.7% vs 更具体 26.0%，数字保留 98% | 永不改（2026-10-13 撤销 v2 规则 9） |
-| 精确数字堆砌 | 曾疑 AI 多 3 倍 | δ−0.06，话题混杂假象 | 永不改 |
-| 漂亮词黑名单 | 赋能/闭环/抓手 | δ+0.10 不显著 | 永不改 |
-| 名词化、明喻、设问、模糊量词、首先/其次/总之 | 经典清单 | 全部 \|δ\|<0.2 | 永不改 |
-| 句长/段落长度不参差 | 曾疑 AI 均匀 | 配对复测两轮均无差异 | 不为节奏改句长 |
-| 「其」字用量 | — | 人类更多（反向） | 不删 |
+| Ordinal subheadings | 3.1× | **Reversed**: human 8.6% vs AI 4.9% | Never edit |
+| 「这意味着」 restatement | Translationese list | **Reversed**: human 0.027 vs AI 0.016 per 1k chars | Never edit |
+| Empty lead-in to list | 9.4× | **Reversed**: humans an order of magnitude higher | Never edit |
+| Vague summary (not edited even with figures in the same paragraph) | Semantic layer 24.7% (one-sided count) | **Symmetric net zero**: vaguer 24.7% vs more specific 26.0%; figures retained 98% | Never edit (2026-10-13 withdrew v2 rule 9) |
+| Dense precise numbers | Once suspected at 3× more in AI | δ−0.06; topic-mixing artifact | Never edit |
+| Buzzword blacklist: 赋能 / 闭环 / 抓手 (empower / closed loop / handle) | δ+0.10 | Not significant | Never edit |
+| Nominalization, similes, rhetorical questions, vague quantifiers, 首先/其次/总之 ("first / second / in summary") | Classic lists | All \|δ\|<0.2 | Never edit |
+| Uniform sentence and paragraph length | Once suspected of AI uniformity | No difference in either round (matched retest) | Do not change sentence length for rhythm |
+| Use of 「其」 | — | Humans use more (reverse) | Do not delete |
 
-各条实测数据、测量脚本、被推翻的预设见 [RESEARCH.md](./RESEARCH.md)。
+For measured data, measurement scripts, and overturned assumptions, see [RESEARCH.md](./RESEARCH.md).
 
-## 只能人审的（skill 明确不碰）
+## Human review only (this skill does not touch these)
 
-- **比喻贴切度**：真实的 AI 味（硬套宏大意象、直译腔、混合比喻），但不是频率问题不是词表问题，模型间共识只有 0–40%。检测报告可给出活跃暗喻密度作参考；默认保留，不把判断任务交给用户。用户主动要求人审时才列 H 级清单，只列出不评级，由用户决定具体条目。
-- **暗喻、拟人化喻体**：2026-10-26 起不做语义层检测（暗喻密度只对 Opus 成立，GPT 无差；拟人两侧近饱和），与比喻贴切度一起并入人审区——通读标红区时顺手看，不做候选判读
-- 三个并列案例是否在凑数（要看语义）
-- 「参差」的质量（自然节奏 vs 机械长短交替，脚本分不开）
+- **Metaphor fit**: real AI taste (forcing grand imagery, literal-translation stiffness, mixed metaphors), but it is neither a frequency nor a wordlist problem. Inter-model agreement is only 0–40%. The detection report may give active-metaphor density as a reference. Keep by default. Do not hand the judgment to the user. Only when the user explicitly asks for human review, list H-grade items without grading; the user decides which specific items to change.
+- **Implicit metaphors and personifying metaphors**: no semantic-layer detection since 2026-10-26 (implicit-metaphor density holds only for Opus; GPT shows no difference; personification is near saturation on both sides). Merged with metaphor fit into the human-review zone: glance at them while reading the flagged zone. No candidate judgment.
+- Whether three parallel examples are padding (requires semantic judgment).
+- The quality of 「参差」 ("variation"): natural rhythm vs mechanical alternation of long and short. Scripts cannot tell them apart.
 
 ---
 
-## 最终验收
+## Final checks
 
-- 改前报告是否列出本篇指标、研究参照与显著性口径、可定位的例句、具体改法和排除项，并等待用户回复再改写；A/B 及语义层命中是否逐条复核，误报是否排除；C/H 是否遵守默认保留边界
-- 语义层判断是否守了纪律：只用判据标签、每条独立判、拿不准选兜底
-- 每处改动是否都能对应方案项和规则编号，指不出的撤销
-- 是否最小改动：没有顺便润色、没动相邻文字
-- 实词全部有出处；限定词让步（「可能」「通常」）没被抹掉
-- 结构完全保留：标题层级、段落顺序、列表表格引用代码块位置
-- 小标题编号、「这意味着」、空转引列表句没被误删（X 级）
-- 没有制造参差：没为节奏改句长、没拆段落、没强加「我/你」
-- 破折号只在高密度文本中处理过
-- 没碰概括替代——即使同段有具体数值也不改（X 级；改写不引入新含糊由信息守恒原则兜底）
-- 段首零主语评论没被扫描/计分（2026-10-26 降级）
-- 复测+对比报告已给用户，A/B 清零，C 级指标无大幅摆动
+- Does the pre-edit report list this article's metrics, research reference and significance definition, locatable examples, concrete fixes, and exclusions, and does it wait for the user's reply before rewriting? Were A/B and semantic hits reviewed item by item, with false positives excluded? Are C/H kept within the default boundaries?
+- Semantic judgments follow discipline: criteria labels only, each item judged independently, fallback label when unsure.
+- Every edit maps to a plan item and rule number. Revert any edit that cannot be mapped.
+- Minimal change: no drive-by polishing, no touching adjacent text.
+- Every content word has a source; qualifiers and concessions (「可能」 "maybe", 「通常」 "usually") are not erased.
+- Structure fully preserved: heading levels, paragraph order, and positions of lists, tables, quotations, and code blocks.
+- X-grade items not wrongly deleted: subheading numbering, 「这意味着」, empty lead-in list sentences.
+- No manufactured variation: no sentence-length changes for rhythm, no paragraph splitting, no imposed 「我/你」.
+- Em dashes handled only in high-density text.
+- Vague summaries not touched, even when the same paragraph has specific values (X-grade). Rewrites must not introduce new vagueness; the information-preservation principle covers this.
+- Zero-subject paragraph comments not scanned or scored (downgraded 2026-10-26).
+- Retest and comparison report delivered to the user: A/B cleared, C metrics without large swings.

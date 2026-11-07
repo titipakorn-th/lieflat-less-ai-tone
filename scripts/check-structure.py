@@ -1,26 +1,26 @@
-"""段落级结构特征对比：相邻句结构同款、段首零主语评论。
+"""Paragraph-level structure comparison: same-structure adjacent sentences, zero-subject paragraph-opening comments.
 
-用法：
-    python3 scripts/check-structure.py --human <目录...> --ai <目录...>
+Usage:
+    python3 scripts/check-structure.py --human <dir...> --ai <dir...>
 
-为什么单独一个脚本：这两项的分母是段数，不是字数。
-用「每千字」会被结构差异带偏——AI 平均每篇 10 个小标题、人类 1-2 个，
-按字数算问句小标题会虚高 30 倍，换成占小标题比例后差异消失。
-涉及结构元素的指标，分母必须是同类元素的总数。
+Why a separate script: both metrics use paragraphs as the denominator, not characters.
+"Per 1k chars" is skewed by structural differences: AI averages 10 subheadings per doc and humans 1-2,
+so per-char counts of question subheadings are inflated 30×; as a share of subheadings the gap disappears.
+For metrics on structural elements, the denominator must be the total of the same kind of element.
 """
 import re
 import sys
 from pathlib import Path
 
-# 段首评论语：省掉回指成分时读者要翻回上一段
+# Paragraph-opening comment phrases: without the anaphor, readers must look back at the previous paragraph
 COMMENT = re.compile(
     r"^(?:听起来|看起来|看上去|听上去|说白了|说到底|换句话说|意味着|值得注意|"
     r"不难看出|细看|再看|回过头看|问题在于|原因在于|结果是|有意思的是|"
     r"更重要的是|关键在于|真正的)"
 )
-# 回指成分：把上文接回来
+# Anaphors: link back to the preceding text
 ANAPHOR = re.compile(r"^(?:这|那|其|此|上面|前面|刚才|以上|该|它|他|她|它们|他们|同样|类似|相比|反过来|但|不过|所以|因此|于是|而|另|除此|与此)")
-# 比喻起段（对照项，实测人类更多）
+# Metaphor openers (control item; humans use more)
 METAPHOR = re.compile(r"^(?:像|就像|好比|好像|仿佛|如同|这就像)")
 
 
@@ -35,12 +35,12 @@ def paragraphs(text):
 
 
 def signature(sent):
-    """句子结构指纹：逗号数、有无冒号、有无括号、长度档"""
+    """Sentence-structure signature: comma count, colon present, bracket present, length bucket."""
     return (sent.count("，"), "：" in sent, ("（" in sent or "(" in sent), len(sent) // 15)
 
 
 def isomorphic(para, n):
-    """段内是否有连续 n 句结构指纹相同"""
+    """Whether a paragraph has n consecutive sentences with the same signature."""
     sents = [s.strip() for s in re.split(r"[。！？]", para) if len(s.strip()) > 10]
     hits = 0
     for i in range(len(sents) - n + 1):
@@ -66,11 +66,11 @@ def measure(texts):
             if COMMENT.match(p) and not ANAPHOR.match(p):
                 zero += 1
     return {
-        "段数": total,
-        "连续两句同构/百段": iso2 / total * 100 if total else 0,
-        "连续三句同构/百段": iso3 / total * 100 if total else 0,
-        "段首零主语评论/非首段%": zero / nonfirst * 100 if nonfirst else 0,
-        "比喻起段/百段(对照)": meta / total * 100 if total else 0,
+        "paragraphs": total,
+        "Isomorphic pairs per 100 paras": iso2 / total * 100 if total else 0,
+        "Isomorphic triples per 100 paras": iso3 / total * 100 if total else 0,
+        "Zero-subject comment opener %": zero / nonfirst * 100 if nonfirst else 0,
+        "Metaphor opener/100 paras (ctrl)": meta / total * 100 if total else 0,
     }
 
 
@@ -108,18 +108,18 @@ def main():
     hm = measure([t for d in human for t in load([d])])
     am = measure(load(ai))
 
-    keys = [k for k in am if k != "段数"]
-    print(f"AI {am['段数']} 段，人类 {hm['段数']} 段\n")
-    head = f"{'指标':<26}{'AI':>8}{'人类':>8}{'倍率':>7}{'稳定性':>8}"
+    keys = [k for k in am if k != "paragraphs"]
+    print(f"AI {am['paragraphs']} paragraphs, human {hm['paragraphs']} paragraphs\n")
+    head = f"{'Metric':<34}{'AI':>8}{'Human':>8}{'Ratio':>7}{'Stability':>10}"
     print(head)
     print("-" * len(head))
     for k in keys:
         a, h = am[k], hm[k]
         r = a / h if h > 0.001 else float("inf")
-        # 各组数值只用来算稳定性，不打印
+        # Per-group values are used only for stability, not printed
         vals = [m[k] for _, m in groups]
         spread = max(vals) / max(min(vals), 0.01)
-        print(f"{k:<26}{a:>8.2f}{h:>8.2f}{r:>6.2f}×{'稳定' if spread <= 5 else '波动大':>8}")
+        print(f"{k:<34}{a:>8.2f}{h:>8.2f}{r:>6.2f}×{'stable' if spread <= 5 else 'unstable':>10}")
 
 
 if __name__ == "__main__":

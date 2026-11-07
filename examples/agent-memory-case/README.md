@@ -1,17 +1,17 @@
-# Lieflat Less AI Tone｜完整案例
+# Lieflat Less AI Tone | Full Case
 
-文章：《Agent 的记忆问题：为什么你的 AI 助手总在失忆》
+Article: 《Agent 的记忆问题：为什么你的 AI 助手总在失忆》 (“Agent Memory: Why Your AI Assistant Keeps Forgetting”)
 
-这个文件夹把同一篇文章的改前检测、建议、改稿、左右对照和复测放在一起，供阅读或作为 skill 工作流示例。
+This folder keeps detection, suggestions, revision, side-by-side comparison and retest for one article together, for reading or as a worked example of the skill workflow.
 
-| 阶段 | 产出 | 用途 |
+| Stage | Output | Purpose |
 |---|---|---|
-| 原始输入 | [原稿](00-原稿.md) | 核对事实和文字起点。 |
-| 阶段一：改前检测 | [检测结果与修改建议](01-改前检测与修改建议.md) | 列出脚本与语义指标、研究参照、原文例句、具体改法和保留范围；这一阶段应等待用户回复。 |
-| 阶段二：改写 | [改后全文](02-改后全文.md) | 用户回复后交付可直接使用的文章。 |
-| 阶段二：对照 | [左右两列 HTML 对照页](03-左右对照.html) | 逐段查看删去和新增的文字，可切换“仅看修改 / 查看全文”。 |
-| 阶段三：复测 | [复测结论](04-复测结论.md) | 核对剩余命中、误报和内容守恒。 |
+| Source | [Original](00-original.md) | Check facts and the starting text. |
+| Stage 1: detection | [Detection results and suggestions](01-detection-and-suggestions.md) | Script and semantic metrics, research baselines, example sentences from the original, concrete edits and what is kept. Wait for the user's reply at this stage. |
+| Stage 2: revision | [Revised full text](02-revised.md) | Deliver the ready-to-use article after the user replies. |
+| Stage 2: comparison | [Side-by-side HTML](03-side-by-side.html) | Review deleted and added text paragraph by paragraph. Toggle "Changes only" / "Show full text". |
+| Stage 3: retest | [Retest findings](04-retest.md) | Check remaining hits, false positives and content preservation. |
 
-附录数据：[改前脚本检测](数据-改前检测.json) · [逐条语义判读](数据-语义判读.json) · [改后脚本复测](数据-改后复测.json)
+Data: [Script detection (before)](data-detect-before.json) · [Per-item semantic labels](data-semantic-labels.json) · [Script retest (after)](data-detect-after.json)
 
-**时间顺序说明**：这篇改稿是在本次对话早些时候生成的；之后 skill 的流程才调整为“展示检测与建议，等用户回复，再改写”。本案例把已有原稿与改稿整理为阶段产出，方便检视新版流程。它不表示新流程可以跳过用户回复。
+**Chronology note**: this revision was generated earlier in the conversation. The skill workflow was later changed to "show detection and suggestions, wait for the user's reply, then revise". This case arranges the existing original and revision as stage outputs so the new flow can be reviewed. It does not mean the new flow can skip the user's reply.

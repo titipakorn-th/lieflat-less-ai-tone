@@ -2,7 +2,7 @@
 __pycache__/
 *.pyc
 
-# 语料不入库：可能含版权或隐私内容
+# Corpora stay out of git: may contain copyrighted or private content
 corpus/
 raw-corpus/
 *-corpus/

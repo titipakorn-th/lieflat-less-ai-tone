@@ -1,81 +1,81 @@
-# 检测协议（去AI味 v2 第一步）
+# Detection protocol (Less AI Tone v2, step 1)
 
-本文定义检测阶段做什么、不改什么。改写规则见 [SKILL.md](./SKILL.md)。
+This file defines what the detection stage does and what it must not change. For rewrite rules, see [SKILL.md](./SKILL.md).
 
-## 为什么先检测再改写
+## Why detect before rewriting
 
-两个原因，都来自实测。
+Two reasons, both from measurement.
 
-一，AI 味的大部分特征是**分布特征**（句长均匀、节长均匀、用词不敢重复），单看一处看不出来，也不该逐处改。逐句"制造参差"会把文章改坏，这类特征只能整篇决策：要么用户接受结构级改写，要么不动。
+1. Most AI-tone features are **distributional** (uniform sentence length, uniform section length, avoiding word repetition). A single instance does not reveal them, and they should not be fixed one by one. Sentence-by-sentence "manufactured variation" damages the text. These features can only be decided for the whole document: either the user accepts a structure-level rewrite, or nothing changes.
 
-二，第一版 skill 的教训：一次性改写时，模型倾向于把"感觉像 AI 味"的东西都动一遍，包括实测根本不是 AI 味的特征（序数词小标题、正文设问、比喻），改完反而更不像人写的。先交付有指标、例句和改法的报告，等用户回复后再动手，是防过度清理的闸门。
+2. Lesson from the first version: in one-shot rewrites, the model tends to change everything that "feels like AI tone," including features measured as not AI tone (ordinal subheadings, rhetorical questions in body text, metaphors). The result reads less human. Delivering a report with metrics, examples, and fixes first, and waiting for the user's reply before acting, is the gate against over-cleaning.
 
-## 三层分工
+## Three-layer division of labor
 
-检测不是一个脚本包打天下，是三层各管一段（方法论来自 43 万次打标的实验结论）：
+Detection is not one script doing everything. Three layers each handle one part. The method comes from experiments on 430k labeling judgments.
 
-| 层 | 管什么 | 谁 | 载体 |
+| Layer | Covers | Who | Vehicle |
 |---|---|---|---|
-| 脚本层 | 数得出符号的（正则命中、标点密度、结构 CV、mtld） | detect.py | 本文件 |
-| 语义层 | 要理解句意的（同义重命名、衔接连环、冒号分类、同构三连） | 会话内模型 | [references/semantic-criteria.md](./references/semantic-criteria.md) |
-| 人审层 | 机器间共识不够的（比喻贴切度、暗喻、拟人化喻体） | 用户 | SKILL.md 人审区 |
+| Script layer | Symbol-countable items (regex hits, punctuation density, structural CV, MTLD) | detect.py | this file |
+| Semantic layer | Items that need sentence meaning (synonym renaming, cohesion chains, colon classification, isomorphic triples) | the in-session model | [references/semantic-criteria.md](./references/semantic-criteria.md) |
+| Human-review layer | Items where machines do not agree enough (metaphor fit, implicit metaphor, personifying metaphor) | the user | human-review zone in SKILL.md |
 
-语义层原理：脚本先抽候选（每段、每个段间接口、每个冒号句、signature 粗筛的三连组），模型对每条候选按封闭判据判标签。正则只能命中固定表面形式，命中不了「同一个意思的不同写法」；但模型判「像不像 AI」带自我偏好，所以判据必须是封闭标签集+逐条独立判断，不允许整体感觉打分。
+How the semantic layer works: the script first extracts candidates (each paragraph, each inter-paragraph junction, each colon sentence, and triples coarse-filtered by signature). The model labels each candidate against closed criteria. Regexes match only fixed surface forms and cannot catch 「同一个意思的不同写法」 (different wordings of the same meaning). A model judging "does this look like AI" brings its own bias, so the criteria must be a closed label set with independent item-by-item judgment. Holistic, feel-based scoring is not allowed.
 
-## 运行
+## Commands
 
 ```bash
-python3 scripts/detect.py <文件或目录> [--max-hits 5] [--json]     # 脚本层
-python3 scripts/detect.py <文件> --candidates --out 候选.json        # 语义层候选抽取
-python3 scripts/report.py 原文 改后 before.json after.json \
-    [--semantic 判读后.json] --out 报告.md                          # 默认 Markdown 前后对比
+python3 scripts/detect.py <file or directory> [--max-hits 5] [--json]     # script layer
+python3 scripts/detect.py <file> --candidates --out candidates.json        # semantic-layer candidate extraction
+python3 scripts/report.py original.md revised.md before.json after.json \
+    [--semantic labeled.json] --out less-ai-tone-report.md                 # default Markdown before/after report
 ```
 
-输出一份分级报告：
+Output is a graded report:
 
-| 级 | 含义 | 改写策略 |
+| Grade | Meaning | Rewrite policy |
 |---|---|---|
-| **A 机械改** | 固定句式/标点，改动不触碰语义 | 模型复核误报后给出建议；用户回复后改 |
-| **B 建议改** | 需句式重组或换说法 | 模型逐条筛选，报告典型例句和改法；用户回复后改 |
-| **C 只报告** | 结构/节奏，超出白名单 | 默认不改；用户主动要求时再处理 |
-| **H 人审区** | 模型判不准贴切度的（拟人化喻体；比喻/暗喻同理） | 默认保留；用户主动要求时再列清单 |
-| **X 已否决** | 实测不是 AI 味（配对复测反向） | 永不改，报告里出现是为了防止误改 |
-| **F 指纹** | 分模型特征（破折号/分号/引号） | 可定位且能安全改写的命中默认建议改；保留须给具体理由，密度用于排序，见 SKILL.md 指纹节 |
+| **A: mechanical fix** | Fixed sentence pattern or punctuation; the change does not touch meaning | Model reviews false positives, then proposes; edit after the user replies |
+| **B: suggested fix** | Needs sentence restructuring or rewording | Model screens item by item; report typical examples and fixes; edit after the user replies |
+| **C: report only** | Structure or rhythm; outside the allowlist | Do not edit by default; handle only if the user explicitly asks |
+| **H: human review** | Fit the model cannot judge (personifying metaphors; metaphors and similes likewise) | Keep by default; list only if the user asks |
+| **X: rejected** | Measured as not AI tone (matched retest reversed) | Never edit. Appears in the report only to prevent wrong edits |
+| **F: fingerprint** | Model-specific features (em dashes, semicolons, quotation marks) | Locatable, safely rewritable hits are proposed by default. Keeping one requires a specific reason. Density is used for ranking. See the fingerprint section of SKILL.md |
 
-## 分级依据
+## Basis for grading
 
-分级不看特征强度，看**改动风险**：改这一处会不会碰到语义、会不会需要补信息、会不会越界。
+Grading is based on **edit risk**, not feature strength: whether the change touches meaning, whether it requires adding information, and whether it oversteps.
 
-- 删「说白了」零语义损失 → A。
-- 打散顿号罗列要重排成分 → B。
-- 句长均匀是整篇属性，逐句改必然过度 → C，只提示。
-- 序数词小标题在第一轮实测是 3.1 倍 AI 味，270 对配对复测**方向反转**（人类 8.6% vs AI 4.9%）→ X。第一版按旧数据把它列为规则 6，v2 删除。
-- 概括替代曾按语义层 24.7% 列为 v2 规则 9（同段有数则恢复数值），2026-10-13 对称口径复查**净零**（AI 更含糊 24.7% vs 更具体 26.0%）→ X。整条撤销，同段有具体数值也不改。
+- Deleting 「说白了」 ("to put it bluntly") loses no meaning → A.
+- Breaking up enumeration-comma lists requires reordering components → B.
+- Uniform sentence length is a whole-document property; sentence-level edits necessarily overdo it → C, notice only.
+- Ordinal subheadings measured at 3.1× AI tone in round one, but the 270-pair matched retest **reversed direction** (human 8.6% vs AI 4.9%) → X. The first version listed them as rule 6 based on old data; v2 removed them.
+- Vague summary was listed as v2 rule 9 at 24.7% on the semantic layer (restore the figure if the same paragraph has one). On 2026-10-13, a symmetric re-check found **net zero** (vaguer 24.7% vs more specific 26.0%) → X. The whole rule is withdrawn. Not edited even when the same paragraph has specific figures.
 
-## X 级清单的来源（v1 → v2 的规则变动）
+## Source of the X-grade list (v1 → v2 rule changes)
 
-| v1 规则 | v1 依据（629 篇不配对） | 配对复测（270 对同题同事实） | v2 处置 |
+| v1 rule | v1 basis (629 unpaired articles) | Matched retest (270 pairs, same topic and facts) | v2 disposition |
 |---|---|---|---|
-| 规则6 序数词小标题 | AI 0.19 vs 人类 0.06，3.1× | **反转**：人类 8.6% vs AI 4.9% | 降为 X，不改 |
-| 「这意味着」复述 | 翻译腔收录，2.6-5.3× | **反向**：人类 0.027 vs AI 0.016 每千字 | 降为 X，不改 |
-| 空转句引列表 | 冒号滥用之一，9.4× | **反向**：人类高一个量级（目录式长文常态） | 降为 X，不改 |
-| 规则8 材料密度 | 数字密度人类 2.8 倍 | 配对后 δ=−0.06 **无差异**；24.7% 概括替代后被对称口径复查否决（净零） | 再否决：v2 曾重写为"概括盖住同段数值"，2026-10-13 整条撤销，降 X |
-| 规则4 破折号 | AI 2.38 vs 人类 0.80，3× | 分模型极端分化：GPT −0.54 / Opus +0.95 | 降级为 F 指纹；>2/千字优先处理，低密度仍逐处检查 |
+| Rule 6, ordinal subheadings | AI 0.19 vs human 0.06, 3.1× | **Reversed**: human 8.6% vs AI 4.9% | Downgraded to X, not edited |
+| "This means" restatement | Translationese list, 2.6–5.3× | **Reversed**: human 0.027 vs AI 0.016 per 1k chars | Downgraded to X, not edited |
+| Empty lead-in to list | One of the colon-abuse cases, 9.4× | **Reversed**: humans an order of magnitude higher (normal in catalogue-style long-form) | Downgraded to X, not edited |
+| Rule 8, material density | Humans 2.8× higher in number density | After matching, δ=−0.06, **no difference**. Vague summary at 24.7% was then rejected by a symmetric re-check (net zero) | Rejected again. v2 had rewritten it as "vague summary covering same-paragraph figures"; withdrawn 2026-10-13, downgraded to X |
+| Rule 4, em dashes | AI 2.38 vs human 0.80, 3× | Extremes split by model: GPT −0.54 / Opus +0.95 | Downgraded to F fingerprint. Over 2 per 1k chars prioritized; low density still checked item by item |
 
-其余 v1 规则（翻案腔、顿号罗列、相邻句同构、提示语冒号、拟人喻体、起手式、翻译腔四种）在配对复测中方向不变、量级相当，全部保留。
+All other v1 rules (contrast reversal, enumeration-comma lists, adjacent-sentence isomorphism, cue-phrase colons, personifying metaphors, opening formulas, and the four translationese patterns) kept their direction and magnitude under matched retest and are all retained.
 
-## 报告怎么读
+## How to read the report
 
-脚本输出是**候选数据**，不是直接发给用户的结论。模型逐条复核后，改前报告要把“本篇命中 → 研究参照 → 例句 → 改法”连起来讲清楚。复核不得静默删除候选：对第一层、第二层中能定位到句子的指标列原始命中数、有效命中数、拟改数和保留数；误报与语义判读阴性也要留下数量和理由，若输入是文件则保存逐条结果。整篇分布指标只报实测值，不强造逐句命中数。研究语料中显著，不等于单篇文章完成了统计显著性检验；不得据此判定作者是 AI。
+The script output is **candidate data**, not a conclusion for the user. After the model reviews each candidate, the pre-edit report must connect "hits in this article → research reference → examples → fixes". Review must not silently drop candidates. For layer 1 and layer 2 metrics that can be pinned to a sentence, list the raw hit count, valid hit count, to-edit count, and keep count. False positives and negative semantic judgments also get counts and reasons. If the input is a file, save item-by-item results. Whole-document distribution metrics report only measured values; do not manufacture per-sentence hit counts. Significance in the research corpus does not mean this article passed a significance test. Do not conclude from it that the author is AI.
 
-1. **A、B 与语义层四项**：先看本篇次数、密度或门槛，再看人类参考和配对复测证据。对拟处理的项给出可定位的原句与具体改法；脚本误报要剔除。
-2. **X、F 与 C/H**：说明已否决特征、模型指纹、结构指标或比喻的去向。F 不推断文章来源模型；可定位且能安全改写的命中默认建议改，保留须说明该处的具体作用。C/H 按整篇指标与人审约束处理。
-3. **口径核对**：不同轮次的指标定义或分母不同时，不能混算倍数。同义词轮换的脚本命中只是启发式，精判走语义层同义重命名。
-4. **用户回复**：报告给出整套建议后停下。用户回复接受或调整方案，再进入改写；不要求逐条勾选。
+1. **A, B, and the four semantic items**: first look at the count, density, or threshold in this article, then the human reference and matched-retest evidence. For items to be handled, give locatable original sentences and concrete fixes. Remove script false positives.
+2. **X, F, and C/H**: explain the disposition of rejected features, model fingerprints, structure metrics, or metaphors. F does not infer the source model of the article. Locatable, safely rewritable hits are proposed for edit by default; keeping one requires stating what that instance does. C/H follow the whole-document metrics and human-review constraints.
+3. **Check definitions**: when metric definitions or denominators differ across rounds, do not mix multipliers. Script hits for synonym rotation are heuristic only; precise judgment goes through semantic-layer synonym renaming.
+4. **User reply**: stop after giving the complete set of suggestions. When the user accepts or adjusts the plan, proceed to rewriting. No item-by-item confirmation is required.
 
-## 检测层做不了、必须留给人的判断
+## What detection cannot do and must leave to humans
 
-- 比喻贴不贴切（模型间共识只有 0–40%，人审是唯一通道）；暗喻、拟人化喻体 2026-10-26 起并入人审区，不做候选判读
-- 三个并列案例是否在凑数（叙事推进不算，要看语义）
-- "参差"是否有质量——机械长短交替和自然节奏脚本分不开（v2.1 计划加句长序列自相关检查）
-- 段首零主语评论不再检测（2026-10-26 裁定：第三层弱信号，与已反转的「句间指代不清」同族）
+- Whether a metaphor fits (model agreement is only 0–40%; human review is the only channel). Implicit metaphors and personifying metaphors have been folded into the human-review zone since 2026-10-26; no candidate judgment.
+- Whether three parallel examples are padding (narrative progression does not count; requires semantic judgment).
+- Whether 「参差」 ("variation") has quality. Scripts cannot separate mechanical alternation of long and short from natural rhythm (v2.1 plans a sentence-length autocorrelation check).
+- Zero-subject paragraph-opening comments are no longer detected (ruling of 2026-10-26: a weak layer-3 signal, in the same family as the reversed 「句间指代不清」 "unclear cross-sentence reference").

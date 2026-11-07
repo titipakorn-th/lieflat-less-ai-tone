@@ -1,33 +1,33 @@
 {
  "meta": {
-  "篇数": 1,
-  "万汉字": 0.26,
-  "段数": 46,
-  "小标题数": 0
+  "docs": 1,
+  "han_10k": 0.26,
+  "paragraphs": 46,
+  "headings": 0
  },
  "density": {
-  "翻案腔": 0.0,
-  "提示语冒号": 0.765,
-  "起手式": 0.0,
-  "当…时从句": 0.0,
-  "前置话题壳": 0.0,
-  "句首连接词": 0.0,
-  "顿号并列≥3": 1.53,
-  "过长前置定语": 0.383,
-  "拟人化喻体": 0.0,
-  "概括替代(已否决)": 0.0,
-  "序数词小标题(已否决)": 0.0,
-  "「这意味着」复述(已否决)": 0.383,
-  "空转句引列表(已否决)": 0.765
+  "Contrast reversal": 0.0,
+  "Cue-phrase colon": 0.765,
+  "Opening formula": 0.0,
+  "当…时 clause": 0.0,
+  "Topic-shell frame": 0.0,
+  "Sentence-initial connective": 0.0,
+  "Enumeration comma list ≥3": 1.53,
+  "Long pre-modifier": 0.383,
+  "Personifying metaphor": 0.0,
+  "Vague summary (rejected)": 0.0,
+  "Ordinal subheading (rejected)": 0.0,
+  "\"This means\" restatement (rejected)": 0.383,
+  "Empty lead-in to list (rejected)": 0.765
  },
  "char_density": {
-  "破折号": 3.06,
-  "分号": 0.765,
-  "引号": 0.0
+  "Em dash": 3.06,
+  "Semicolon": 0.765,
+  "Quotation marks": 0.0
  },
  "hits": {
-  "翻案腔": [],
-  "提示语冒号": [
+  "Contrast reversal": [],
+  "Cue-phrase colon": [
    {
     "file": "Agent的记忆问题_去AI味版.md",
     "line": 1,
@@ -39,11 +39,11 @@
     "excerpt": "问题："
    }
   ],
-  "起手式": [],
-  "当…时从句": [],
-  "前置话题壳": [],
-  "句首连接词": [],
-  "顿号并列≥3": [
+  "Opening formula": [],
+  "当…时 clause": [],
+  "Topic-shell frame": [],
+  "Sentence-initial connective": [],
+  "Enumeration comma list ≥3": [
    {
     "file": "Agent的记忆问题_去AI味版.md",
     "line": 67,
@@ -65,24 +65,24 @@
     "excerpt": "它们会\"毕业\"（上线、定稿、归档）"
    }
   ],
-  "过长前置定语": [
+  "Long pre-modifier": [
    {
     "file": "Agent的记忆问题_去AI味版.md",
     "line": 3,
     "excerpt": "一个日本音乐人花了 10 小时向 AI 倾诉她的全部计划"
    }
   ],
-  "拟人化喻体": [],
-  "概括替代(已否决)": [],
-  "序数词小标题(已否决)": [],
-  "「这意味着」复述(已否决)": [
+  "Personifying metaphor": [],
+  "Vague summary (rejected)": [],
+  "Ordinal subheading (rejected)": [],
+  "\"This means\" restatement (rejected)": [
    {
     "file": "Agent的记忆问题_去AI味版.md",
     "line": 21,
     "excerpt": "这意味着"
    }
   ],
-  "空转句引列表(已否决)": [
+  "Empty lead-in to list (rejected)": [
    {
     "file": "Agent的记忆问题_去AI味版.md",
     "line": 35,
@@ -97,11 +97,11 @@
  },
  "syn_hits": [],
  "structure": {
-  "句长CV": 0.545,
-  "节长CV": null,
-  "小标题/千字": 0.0,
-  "两句同构/百段": 4.35,
-  "三句同构/百段": 0.0,
-  "mtld粗估": 1528
+  "Sentence-length CV": 0.545,
+  "Section-length CV": null,
+  "Headings per 1k chars": 0.0,
+  "Isomorphic pairs per 100 paras": 4.35,
+  "Isomorphic triples per 100 paras": 0.0,
+  "MTLD (rough)": 1528
  }
 }
